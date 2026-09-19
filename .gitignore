@@ -42,3 +42,6 @@ game/web/seventh-veil/.svelte-kit/
 # GitNexus index and its generated agent skills (rebuild with `gitnexus analyze`)
 .gitnexus/
 .claude/skills/gitnexus/
+
+# Engine upload staging (built from web-sdk output)
+upload/

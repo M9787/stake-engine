@@ -2,36 +2,55 @@
 
 ## Purpose
 
-Checklist: math files + frontend build → Stake Engine → published → submitted for approval.
+Checklist: math files + frontend build → Engine Studio → published → submitted for approval → live.
 
 ## Prereq
 
-- Stake Engine account (PROJECT.md §11 Q1).
+- Engine Studio team and game (done 2026-09-19: team `dumalex`, game `oracle-of-sevens`, https://studio.engine.io/teams/dumalex/games/oracle-of-sevens).
+- Team setup in Studio (owner only): **Payments** method (Guaranteed 7.5% chosen; fixed for new publishers once a game is active), **Settings** provider name + URL slug, **Wallet** for payouts.
 - Math tuned and verified ([07](07-math-spec.md)), compliance checked ([08](08-compliance.md)).
 - Frontend build ([02](02-web-sdk.md)).
 
 ## Steps
 
-- [ ] 1. Production math run (100k sims spin modes, 50k buy modes; scale up only if Engine upload limits allow). `scripts\math_stats.py` passes.
-- [ ] 2. Upload `math-sdk\games\seventh_veil\library\publish_files\` to Engine. Engine checks format and shows stats.
-- [ ] 3. Build frontend: `pnpm run build --filter=seventh-veil`.
-- [ ] 4. Combine `prerendered\pages\index.html` and `client\` contents from `apps\seventh-veil\.svelte-kit\output\`.
-- [ ] 5. Upload via Engine **Files** page.
-- [ ] 6. **Publish Frontend**.
-- [ ] 7. Test via **Developer** page: one round per mode, plus replay URL.
-- [ ] 8. Fill the reviewer event-ID table in [08](08-compliance.md), walk the login-gated checklist, submit.
+- [ ] 1. `scripts\doctor.ps1` exits 0, then `scripts\math_stats.py seventh_veil --brief --sessions` passes.
+- [ ] 2. Build the frontend and assemble the upload folder:
+  ```powershell
+  Push-Location web-sdk; pnpm run build --filter=seventh-veil; Pop-Location
+  powershell -ExecutionPolicy Bypass -File scripts\check_external_urls.ps1
+  $o = 'web-sdk\apps\seventh-veil\.svelte-kit\output'
+  New-Item -ItemType Directory -Force upload\front | Out-Null
+  Copy-Item "$o\prerendered\pages\index.html" upload\front
+  Copy-Item "$o\client\*" upload\front -Recurse
+  ```
+  `upload\` is git-ignored. Delete `upload\front` before rebuilding it; leave out `upload\front\.vite`.
+- [ ] 3. Studio → game → **Files** → **Import Files** → select `math-sdk\games\seventh_veil\library\publish_files` → **Start Sync**.
+- [ ] 4. **Import Files** → select `upload\front` → **Start Sync**.
+- [ ] 5. **Publish Game** → Math, then **Publish Game** → Front End.
+- [ ] 6. **Start Approval** page, Readiness: math version published, front version published, math validation (RTP, hit rate, max win), betlevel validation (at least one valid betlevel template).
+- [ ] 7. **Play Game**: one round per mode, replay, `social=true`.
+- [ ] 8. **Media**: 3:4 tile set as cover, 16:9 cover art. Tile assets per the tile requirements page: `GameTitle-BG` (PNG/JPG), `GameTitle-FG.png` (transparent), `ProviderName-Logo.png` (transparent); BG + FG ≤ 3 MB combined.
+- [ ] 9. Walk the login-gated submission checklist (stake-engine.com login is separate from Studio), fill the Payment, Distribution, Compliance, Details tabs, then **Submit** (owner clicks).
 
-Exact Engine UI labels for steps 2 and 8: unverified → PROJECT.md §11 Q1.
+## Review
+
+- Three independent reviewers rate 0–3 stars within 24 hours.
+- Studio approval page: below 2 stars average the game is not published; resubmit within 3 days after fixes. Public checklist says ≥1 star is approved. Plan for ≥2.
+- First-time publishers: one open review at a time (five once a game is live).
+- After approval the game is live on Stake within 24 hours. Payouts on the 1st of each month to the team wallet.
 
 ## Verify
 
-- Game loads from Engine URL, authenticates, plays and ends a round in every mode, no error code.
-- Review result: average ≥1 star.
+- Readiness shows every check passed.
+- Game loads from Studio **Play Game**, authenticates, plays and ends a round in every mode, no error code.
 
 ## Sources
 
 | URL | Proves | Checked |
 |---|---|---|
-| https://github.com/engineio/web-sdk | steps 3–7 | 2026-09-19 |
-| https://stake-engine.com/docs/math/math-file-format | steps 1–2 | 2026-09-19 |
-| https://stake-engine.com/docs/approval-guidelines/submission-checklist | step 8 | 2026-09-19 |
+| https://studio.engine.io/teams/dumalex/games/oracle-of-sevens/approval | readiness checks, 2-star bar, one open review, go-live and payout timing | 2026-09-19 |
+| https://studio.engine.io/teams/dumalex/payments | payment methods, method lock for new publishers, monthly payouts | 2026-09-19 |
+| https://stake-engine.com/docs/approval-guidelines/game-tile-requirements | tile assets, names, 3 MB limit | 2026-09-19 |
+| https://stake-engine.com/docs/approval-guidelines/submission-checklist | checklist is login-gated; 0–3 stars, ≥1 star approved | 2026-09-19 |
+| https://github.com/engineio/web-sdk | upload folder layout (`index.html` + `client\`), Import Files, Publish Game | 2026-09-19 |
+| https://stake-engine.com/docs/math/math-file-format | math folder contents | 2026-09-19 |

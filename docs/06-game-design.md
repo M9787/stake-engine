@@ -1,4 +1,6 @@
-# 06 — Game design: Seventh Veil
+# 06 — Game design: Oracle of Sevens
+
+Player-visible name: Oracle of Sevens. The veil motif stays in play ("Fate: Veil", "THE VEIL TEARS"): the oracle lifts the veil. Internal ids keep `seventh_veil`.
 
 ## Purpose
 

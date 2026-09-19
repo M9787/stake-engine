@@ -1,14 +1,15 @@
-# PROJECT — Seventh Veil
+# PROJECT — Oracle of Sevens
 
 Source of truth. Other files link here and never restate goals, pins, or modes.
 Brief: [docs/_original-brief.txt](docs/_original-brief.txt), [game_description](game_description). Rules for agents: [CLAUDE.md](CLAUDE.md).
 
 ## 1. Goal
 
-Ship **Seventh Veil** to Stake Engine: a mystic-tarot 7x7 cluster-tumble slot with a charged multiplier grid, 5 frozen bet modes, and a 77,777x max win.
+Ship **Oracle of Sevens** to Stake Engine: a mystic-tarot 7x7 cluster-tumble slot with a charged multiplier grid, 5 frozen bet modes, and a 77,777x max win.
+Player-visible name is Oracle of Sevens (Studio: team `dumalex`, game `oracle-of-sevens` on studio.engine.io). Internal ids keep the working name `seventh_veil` / `seventh-veil`.
 Our code lives in `game\math\seventh_veil` and `game\web\seventh-veil` (tracked here). `scripts\sync.ps1` copies it into the SDK clones, where it builds and runs.
 
-DONE test: game approved on Stake Engine (average ≥1 star) and live.
+DONE test: game approved on Stake Engine with ≥2 stars and live. Game Quality Rankings: 1 star = not published (the public checklist's "≥1 star" is outdated).
 
 ## 2. Non-Goals
 
@@ -59,6 +60,8 @@ stake/
 ```
 
 ## 6. Milestones
+
+Open work, scored and prioritized: [TODO.md](TODO.md).
 
 | # | Milestone | DONE test | State |
 |---|---|---|---|
@@ -125,11 +128,11 @@ Books → `bookEventHandlerMap` → EmitterEvents. Event types: `reveal`, `winIn
 | Q3 | ~~Ante-mode value~~ closed 2026-09-19: retuned (omen base RTP 0.30 → 0.40) and worded honestly in rules and dialogs | — | no |
 | Q4 | ~~Jurisdiction buttons~~ closed 2026-09-19: our `ui/UIDefault.svelte` hides turbo/autoplay/buy; verified in demo (`demo_nobuy_noturbo_noauto`) | — | no |
 | Q5 | Replay link: the SDK keeps no round/event ID in state, so the game cannot build a "copy replay link". Replay mode itself works (verified with mock `/bet/replay`). Confirm on Engine whether its UI provides the link | project owner | M6 |
-| Q6 | Engine caps on ante cost or max-win exposure | project owner | M6 |
+| Q6 | ~~Engine caps~~ closed 2026-09-19: max cost ≤2,000×, max win ≤500,000×; bet-level template set by exposure (2-star tier $15M / $100k bet cost) — studio.engine.io/docs math-verification | — | no |
 | Q7 | Tarot theme regional review risk | project owner | M6 |
 | Q8 | ~~External URLs~~ closed 2026-09-19: Typekit removed, `webfontloader` stubbed, Inter (OFL) bundled, sample URLs stripped; `check_external_urls.ps1` exit 0 | — | no |
 | Q9 | RGS mode names are lower case (`base`), web keys upper case (`BASE`), as in the SDK samples. Confirm RGS matching is case-insensitive | project owner | M6 |
-| Q10 | Books total 518 MB (100k/50k sims). Confirm Engine's math upload limit | project owner | M6 |
+| Q10 | ~~Upload limit~~ closed 2026-09-19: ≤4.2 GB per books file, ≤10M events per mode; ours max 164 MB | — | no |
 | Q11 | Buy-mode charging: the client multiplies only `activate` modes; the mock charges `amount × cost` for all modes. Confirm the real RGS does the same for buy modes | project owner | M6 |
 | Q12 | Social mode: shared SDK labels outside our code (buy-bonus dialog texts) may still use restricted words; our texts (rules, mode dialogs, error messages) go through `t()`. Check on Engine with `social=true` | agent | M6 |
 | Q13 | Once during demo testing the bet read $10 instead of $1 before a forced round; not reproduced in 7 later spins. Watch for it in M6 testing | agent | no |
@@ -145,5 +148,9 @@ Books → `bookEventHandlerMap` → EmitterEvents. Event types: `reveal`, `winIn
 | https://stake-engine.com/docs/math/math-file-format | index.json, lookup CSV, books format | 2026-09-19 |
 | https://stake-engine.com/docs/rgs | RGS flow, money units | 2026-09-19 |
 | https://stake-engine.com/ | revenue: 10% GGR or 7.5% expected GGR | 2026-09-19 |
+| https://studio.engine.io/docs/approval-guidelines/submission-checklist | full login-gated checklist (incl. no Stake Engine loader) | 2026-09-19 |
+| https://studio.engine.io/docs/approval-guidelines/game-quality-rankings | 1 star = not published; AI-asset and shallow-gameplay risks | 2026-09-19 |
+| https://studio.engine.io/docs/approval-guidelines/math-verification | critical/non-critical math tests, file limits, bet-level templates | 2026-09-19 |
+| https://studio.engine.io/docs/approval-guidelines/general-disclaimer | required rules disclaimer text | 2026-09-19 |
 | https://github.com/StakeEngine/math-sdk | math SDK, `0_0_cluster` base, 3-star limits in `utils/rgs_verification.py` | 2026-09-19 |
 | https://github.com/engineio/web-sdk | web SDK (moved from StakeEngine/web-sdk), `apps/cluster` base | 2026-09-19 |

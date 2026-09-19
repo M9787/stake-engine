@@ -92,12 +92,12 @@
 
 		<UI>
 			{#snippet gameName()}
-				<UiGameName name="SEVENTH VEIL" />
+				<UiGameName name="ORACLE OF SEVENS" />
 			{/snippet}
 			{#snippet logo()}
 				<Text
 					anchor={{ x: 1, y: 0 }}
-					text="SEVENTH VEIL"
+					text="ORACLE OF SEVENS"
 					style={{
 						fontFamily: 'proxima-nova',
 						fontSize: REM * 1.5,

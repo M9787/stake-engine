@@ -1,0 +1,126 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+
+	import { EnablePixiExtension } from 'components-pixi';
+	import { EnableHotkey } from 'components-shared';
+	import { MainContainer } from 'components-layout';
+	import { App, Text, REM } from 'pixi-svelte';
+	import { stateModal } from 'state-shared';
+
+	import { UiGameName } from 'components-ui-pixi';
+	import UI from './ui/UI.svelte';
+	import { GameVersion } from 'components-ui-html';
+	declare const __GAME_VERSION__: string;
+	const gameVersion = __GAME_VERSION__;
+
+	import { getContext } from '../game/context';
+	import { initBetModes } from '../game/betModes';
+	import GameModals from './GameModals.svelte';
+	import EnableJurisdiction from './EnableJurisdiction.svelte';
+	import EnableSound from './EnableSound.svelte';
+	import EnableGameActor from './EnableGameActor.svelte';
+	import ResumeBet from './ResumeBet.svelte';
+	import Sound from './Sound.svelte';
+	import Background from './Background.svelte';
+	import LoadingScreen from './LoadingScreen.svelte';
+	import BoardFrame from './BoardFrame.svelte';
+	import MultiplierGrid from './MultiplierGrid.svelte';
+	import Board from './Board.svelte';
+	import Anticipations from './Anticipations.svelte';
+	import ClusterWinAmounts from './ClusterWinAmounts.svelte';
+	import TumbleBoard from './TumbleBoard.svelte';
+	import TumbleWinAmount from './TumbleWinAmount.svelte';
+	import GlobalMultiplier from './GlobalMultiplier.svelte';
+	import Win from './Win.svelte';
+	import FreeSpinIntro from './FreeSpinIntro.svelte';
+	import FreeSpinCounter from './FreeSpinCounter.svelte';
+	import FreeSpinOutro from './FreeSpinOutro.svelte';
+	import Transition from './Transition.svelte';
+
+	const context = getContext();
+
+	initBetModes();
+
+	onMount(() => (context.stateLayout.showLoadingScreen = true));
+
+	context.eventEmitter.subscribeOnMount({
+		buyBonusConfirm: () => {
+			stateModal.modal = { name: 'buyBonusConfirm' };
+		},
+	});
+</script>
+
+<App>
+	<EnableSound />
+	<EnableHotkey />
+	<EnableJurisdiction />
+	<EnableGameActor />
+	<EnablePixiExtension />
+
+	<Background />
+
+	{#if context.stateLayout.showLoadingScreen}
+		<LoadingScreen onloaded={() => (context.stateLayout.showLoadingScreen = false)} />
+	{:else}
+		<ResumeBet />
+		<!--
+			The reason why <Sound /> is rendered after clicking the loading screen:
+			"Autoplay with sound is allowed if: The user has interacted with the domain (click, tap, etc.)."
+			Ref: https://developer.chrome.com/blog/autoplay
+		-->
+		<Sound />
+
+		<MainContainer>
+			<BoardFrame />
+		</MainContainer>
+
+		<MainContainer>
+			<MultiplierGrid />
+		</MainContainer>
+
+		<MainContainer>
+			<Board />
+			<Anticipations />
+			<TumbleWinAmount />
+			<GlobalMultiplier />
+		</MainContainer>
+
+		<MainContainer>
+			<TumbleBoard />
+			<ClusterWinAmounts />
+		</MainContainer>
+
+		<UI>
+			{#snippet gameName()}
+				<UiGameName name="SEVENTH VEIL" />
+			{/snippet}
+			{#snippet logo()}
+				<Text
+					anchor={{ x: 1, y: 0 }}
+					text="SEVENTH VEIL"
+					style={{
+						fontFamily: 'proxima-nova',
+						fontSize: REM * 1.5,
+						fontWeight: '600',
+						lineHeight: REM * 2,
+						fill: 0xffffff,
+					}}
+				/>
+			{/snippet}
+		</UI>
+		<Win />
+		<FreeSpinIntro />
+		{#if ['desktop', 'landscape'].includes(context.stateLayoutDerived.layoutType())}
+			<FreeSpinCounter />
+		{/if}
+		<FreeSpinOutro />
+		<Transition />
+
+	{/if}
+</App>
+
+<GameModals>
+	{#snippet version()}
+		<GameVersion version={gameVersion} />
+	{/snippet}
+</GameModals>

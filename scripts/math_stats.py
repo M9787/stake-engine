@@ -1,0 +1,177 @@
+"""Per-mode math stats for a math-sdk game: RTP, hit rate, win>cost, max win, quantiles,
+3-star volatility metrics, books<->lookup payout match, event types.
+
+Usage (from stake\\): math-sdk\\env\\Scripts\\python.exe scripts\\math_stats.py seventh_veil [--brief] [--sessions]
+--sessions adds a session-survival check for spin modes: 100 base bets start, 20,000 sessions.
+"""
+
+import json
+import os
+import sys
+
+import numpy as np
+import zstandard as zstd
+
+ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
+GAME = ARGS[0] if ARGS else "seventh_veil"
+ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "math-sdk", "games", GAME)
+PUB = os.path.join(ROOT, "library", "publish_files")
+
+# Mirrors math-sdk utils/rgs_verification.py verify_mode_volatility (3-star limits).
+LIMITS = {"prob5k": 1e-2, "prob10k": 0.5e-2, "etl40b": 0.9, "etl10k": 0.8, "cvar": 800, "rtp": 0.967}
+
+
+def prob_scale(cost):
+    if cost >= 200:
+        return 0.8
+    if cost >= 100:
+        return 0.5
+    return 1.0
+
+
+def read_lookup(path):
+    rows = []
+    with open(path, encoding="UTF-8") as f:
+        for line in f:
+            sim_id, weight, payout = line.strip().split(",")
+            rows.append((int(sim_id), int(weight), int(payout)))
+    return rows
+
+
+def read_books(path):
+    payouts, types, bonus_ids = {}, set(), set()
+    with open(path, "rb") as fh:
+        data = zstd.ZstdDecompressor().stream_reader(fh).read().decode("utf-8")
+    for line in data.splitlines():
+        if not line.strip():
+            continue
+        book = json.loads(line)
+        payouts[book["id"]] = book["payoutMultiplier"]
+        for ev in book["events"]:
+            types.add(ev["type"])
+            if ev["type"] == "freeSpinTrigger":
+                bonus_ids.add(book["id"])
+    return payouts, types, bonus_ids
+
+
+def cvar(dist, total, alpha=0.999):
+    """Mean win in the top (1-alpha) tail."""
+    tail = total * (1 - alpha)
+    acc, value = 0.0, 0.0
+    for win, w in sorted(dist.items(), reverse=True):
+        take = min(w, tail - acc)
+        if take <= 0:
+            break
+        value += win * take
+        acc += take
+    return value / tail
+
+
+def mode_stats(mode):
+    name, cost = mode["name"], mode["cost"]
+    # Publish lookup is written by the optimizer / format checks. Without them, the raw
+    # (unit-weight) table in library\lookup_tables is newer; use whichever is newer.
+    pub_lut = os.path.join(PUB, mode["weights"])
+    raw_lut = os.path.join(ROOT, "library", "lookup_tables", f"lookUpTable_{name}.csv")
+    lut = pub_lut
+    if os.path.exists(raw_lut) and os.path.getmtime(raw_lut) > os.path.getmtime(pub_lut):
+        lut = raw_lut
+    rows = read_lookup(lut)
+    total = sum(w for _, w, _ in rows)
+    dist = {}
+    for _, w, p in rows:
+        dist[p / 100] = dist.get(p / 100, 0) + w
+    rtp = sum(win * w for win, w in dist.items()) / total / cost
+    hit = sum(w for win, w in dist.items() if win > 0) / total
+    over_cost = sum(w for win, w in dist.items() if win > cost) / total
+    p5k = sum(w for win, w in dist.items() if win >= 5000) / total * prob_scale(cost)
+    p10k = sum(w for win, w in dist.items() if win >= 10000) / total * prob_scale(cost)
+    etl40 = sum(win * w for win, w in dist.items() if win >= 40 * cost) / total
+    etl10k = sum(win * w for win, w in dist.items() if win >= 10000) / total
+    cv = cvar(dist, total) / cost
+    max_win = max(dist)
+    max_prob = dist[max_win] / total
+    ordered = sorted(((win, w) for win, w in dist.items()), key=lambda x: x[0])
+    quant = {}
+    for q in (0.5, 0.9, 0.99, 0.999):
+        acc = 0
+        for win, w in ordered:
+            acc += w
+            if acc / total >= q:
+                quant[q] = win
+                break
+    payouts, types, bonus_ids = read_books(os.path.join(PUB, mode["events"]))
+    bonus_w = sum(w for i, w, _ in rows if i in bonus_ids)
+    match = all(payouts.get(i) == p for i, _, p in rows) and len(payouts) == len(rows)
+    metrics = {"prob5k": p5k, "prob10k": p10k, "etl40b": etl40, "etl10k": etl10k, "cvar": cv, "rtp": rtp}
+    fails = {k: round(v, 4) for k, v in metrics.items() if v > LIMITS[k] * (1 + 1e-9)}
+    return {
+        "mode": name,
+        "cost": cost,
+        "rtp": round(rtp, 5),
+        "hit_rate": round(hit, 4),
+        "win_gt_cost": round(over_cost, 4),
+        "max_win_x": max_win,
+        "max_win_1_in": round(1 / max_prob) if max_prob else None,
+        "bonus_1_in": round(total / bonus_w, 1) if bonus_w else None,
+        "quantiles_x": {str(k): v for k, v in quant.items()},
+        "cvar_per_cost": round(cv, 1),
+        "etl40b": round(etl40, 4),
+        "etl10k": round(etl10k, 4),
+        "three_star_fails": fails,
+        "books_match_lookup": match,
+        "event_types": sorted(types),
+        "_rows": rows,
+    }
+
+
+def sessions(rows, cost, start=100.0, n=20000, cap=2000, seed=7):
+    """Sample sessions from the weighted lookup: bet `cost` base bets per spin until bust or cap."""
+    rng = np.random.default_rng(seed)
+    weights = np.array([w for _, w, _ in rows], dtype=np.float64)
+    wins = np.array([p / 100 for _, _, p in rows], dtype=np.float64)
+    probs = weights / weights.sum()
+    bal = np.full(n, start)
+    alive = np.ones(n, dtype=bool)
+    spins = np.full(n, cap)
+    streak = np.zeros(n, dtype=np.int32)
+    longest = np.zeros(n, dtype=np.int32)
+    for t in range(cap):
+        idx = alive.nonzero()[0]
+        if idx.size == 0:
+            break
+        win = wins[rng.choice(len(wins), size=idx.size, p=probs)]
+        bal[idx] += win - cost
+        if t < 200:
+            streak[idx] = np.where(win == 0, streak[idx] + 1, 0)
+            longest[idx] = np.maximum(longest[idx], streak[idx])
+        bust = idx[bal[idx] < cost]
+        spins[bust] = t + 1
+        alive[bust] = False
+    return {
+        "median_spins": int(np.median(spins)),
+        "p_survive_200": round(float((spins >= 200).mean()), 3),
+        "dead_streak_200_median": int(np.median(longest)),
+        "dead_streak_200_p90": int(np.percentile(longest, 90)),
+    }
+
+
+def main():
+    with open(os.path.join(PUB, "index.json"), encoding="UTF-8") as f:
+        index = json.load(f)
+    results = [mode_stats(m) for m in index["modes"]]
+    for r in results:
+        rows = r.pop("_rows")
+        if "--sessions" in sys.argv and r["cost"] < 10:
+            r["sessions_100bb"] = sessions(rows, r["cost"])
+    if "--brief" in sys.argv:
+        for r in results:
+            print(r["mode"], "rtp", r["rtp"], "hit", r["hit_rate"], ">cost", r["win_gt_cost"],
+                  "max", r["max_win_x"], "1in", r["max_win_1_in"], "bonus 1in", r["bonus_1_in"], "q", r["quantiles_x"], "fails", r["three_star_fails"],
+                  "match", r["books_match_lookup"], *(["sessions", r["sessions_100bb"]] if "sessions_100bb" in r else []))
+        return
+    print(json.dumps(results, indent=1))
+
+
+if __name__ == "__main__":
+    main()

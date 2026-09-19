@@ -1,0 +1,44 @@
+# Local config
+.env
+
+# SDK forks are their own git repos (cloned in iteration 3)
+math-sdk/
+web-sdk/
+
+# Python (math-sdk)
+env/
+__pycache__/
+*.pyc
+
+# Node (web-sdk)
+node_modules/
+.svelte-kit/
+.turbo/
+dist/
+storybook-static/
+
+# Generated math outputs
+library/
+*.jsonl.zst
+
+# Rust optimizer
+target/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Game source: dev-only placeholder art (sample assets, not ours) and caches
+game/web/seventh-veil/static/
+game/web/seventh-veil/node_modules/
+game/web/seventh-veil/.svelte-kit/
+.mock-rgs/
+
+# Browser automation artifacts
+.playwright-mcp/
+
+# GitNexus index and its generated agent skills (rebuild with `gitnexus analyze`)
+.gitnexus/
+.claude/skills/gitnexus/

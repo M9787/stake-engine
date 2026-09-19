@@ -1,0 +1,47 @@
+# 00 — Platform (Stake Engine, RGS)
+
+## Purpose
+
+Facts about the platform the game runs on. Read before 01..05.
+
+## Prereq
+
+None.
+
+## Steps (what the platform does)
+
+1. **Stake Engine** hosts games and the RGS (Remote Game Server). The developer uploads static math files and a frontend build. No developer-run backend.
+2. **Math on RGS.** RGS stores pre-simulated rounds ("books"). A play returns one book, picked by lookup-table weights. File format: [01-math-sdk.md](01-math-sdk.md#outputs).
+3. **Game URL.** The game loads from the Engine CDN with query params:
+
+   | Param | Meaning |
+   |---|---|
+   | `sessionID` | player session, required on every request |
+   | `lang` | ISO 639-1 language code |
+   | `device` | `mobile` or `desktop` |
+   | `rgs_url` | RGS base URL — never hardcode, it can change |
+
+4. **RGS API flow.** Call `/wallet/authenticate` on load. Then per round: `/wallet/play` → animate → `/wallet/end-round`. `/wallet/balance` reads balance. Without authenticate, calls fail with `400 ERR_IS`.
+5. **Resume.** On reload, `round.event` in the authenticate response tells where to resume animations of an unfinished round.
+6. **Money.** Integers with 6 decimal places: `1000000` = 1 unit. Currency affects display only.
+7. **Bets.** Bet must lie in `minBet..maxBet` and divide by `stepBet` (from authenticate). Debit = base bet × bet-mode cost multiplier.
+8. **Error codes.** 400: `ERR_VAL`, `ERR_IPB`, `ERR_IS`, `ERR_ATE`, `ERR_GLE`, `ERR_LOC`. 500: `ERR_GEN`, `ERR_MAINTENANCE`.
+9. **Stateless only.** Each bet is independent. No jackpots, gamble features, continuation, or early cash-out. Player choices happen before the spin, as bet modes. Math and modes cannot change after approval.
+10. **Revenue.** 10% of GGR, or a guaranteed 7.5% of expected GGR, chosen per team.
+11. **Approval.** Three reviewers rate 0–3 stars (design, gameplay, math compliance). Average >= 1 star approves. Checklist is login-gated (PROJECT.md §11 Q1).
+
+## Verify
+
+- Each step above maps to a Sources row below.
+- Publishing page content: unverified → PROJECT.md §11 Q1.
+
+## Sources
+
+| URL | Proves | Checked |
+|---|---|---|
+| https://stake-engine.com/docs/rgs | steps 1, 3–8 | 2026-09-19 |
+| https://stake-engine.com/docs/math/math-file-format | step 2 | 2026-09-19 |
+| https://stake-engine.com/docs/approval-guidelines | step 9 | 2026-09-19 |
+| https://stake-engine.com/ | step 10 | 2026-09-19 |
+| https://stake-engine.com/docs/approval-guidelines/submission-checklist | step 11 | 2026-09-19 |
+| https://github.com/engineio/ts-client | Engine npm client for RGS calls | 2026-09-19 |

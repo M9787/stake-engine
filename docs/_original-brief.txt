@@ -1,0 +1,13 @@
+Development and Monetization Website
+
+https://stake-engine.com
+
+Developer Docs are needed 
+Developer Kit is needed 
+
+Best Practice is needed. 
+
+We need to have properly setted up env in this folder for development. 
+It must be simple, structured respecting hierarchy of ideas.
+
+The Final output must be ready to develop environment 

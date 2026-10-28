@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { type Snippet } from 'svelte';
 	import { GlobalStyle } from 'components-ui-html';
-	import { LoaderStakeEngine, LoadI18n } from 'components-shared';
+	import { LoadI18n } from 'components-shared';
 	import '../assets/fonts/fonts.css';
 	import Authenticate from '../components/Authenticate.svelte';
 	import Game from '../components/Game.svelte';
@@ -13,8 +13,6 @@
 
 	const props: Props = $props();
 
-	const loaderUrlStakeEngine = new URL('../../stake-engine-loader.gif', import.meta.url).href;
-
 	setContext();
 </script>
 
@@ -25,7 +23,5 @@
 		</LoadI18n>
 	</Authenticate>
 </GlobalStyle>
-
-<LoaderStakeEngine src={loaderUrlStakeEngine} />
 
 {@render props.children()}

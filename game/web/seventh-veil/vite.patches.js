@@ -23,6 +23,32 @@ const lang = () => {
 			],
 		],
 	},
+	{
+		// Engine [222]: the real cost of every mode, buy modes included (shared code counts a
+		// 100x buy as 1x), and no crash while no mode is set. Also fixes the replay cost [174].
+		// Engine [242]: on low balance the bet snaps to a valid bet level, never to balance/cost.
+		file: 'state-shared/src/stateBet.svelte.ts',
+		why: 'real mode cost and bet-level snapping',
+		edits: [
+			[
+				/import \{ stateMeta \} from '\.\/stateMeta\.svelte';/,
+				`import { stateMeta } from './stateMeta.svelte';
+import { stateConfig } from './stateConfig.svelte';`,
+			],
+			[
+				/const max = stateBet\.balanceAmount \/ costMultiplier;\s*if \(value >= max\) return max;\s*return value;/,
+				`const max = stateBet.balanceAmount / costMultiplier;
+	if (value <= max) return value;
+	const levels = [...stateConfig.betAmountOptions].sort((a, b) => a - b);
+	const fitting = levels.filter((level) => level <= max);
+	return fitting.length ? fitting[fitting.length - 1] : (levels[0] ?? value);`,
+			],
+			[
+				/const betCostMultiplier = \(\) =>\s*stateBetDerived\.activeBetMode\(\)\.type === 'activate'\s*\? stateBetDerived\.activeBetMode\(\)\.costMultiplier\s*: 1;/,
+				`const betCostMultiplier = () => stateBetDerived.activeBetMode()?.costMultiplier ?? 1;`,
+			],
+		],
+	},
 ];
 
 export const sharedPackagePatches = () => {
@@ -47,6 +73,7 @@ export const sharedPackagePatches = () => {
 			if (!patch) return null;
 			let out = code;
 			for (const [search, replace] of patch.edits) {
+				search.lastIndex = 0; // global regexes keep state between test() calls
 				if (!search.test(out)) {
 					throw new Error(`seventh-veil patch "${patch.why}": pattern not found in ${patch.file}: ${search}`);
 				}

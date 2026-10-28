@@ -45,7 +45,8 @@
 		...paySymbols.flatMap(([, symbol]) => (symbol.paytable ?? []).flatMap((entry) => Object.values(entry))),
 	);
 	const BUTTONS: [string, string][] = [
-		['Spin', 'Starts a round at the current bet. Space also spins where allowed.'],
+		['Spin', 'Starts a round at the current bet. Space also spins where allowed; holding Space keeps spinning.'],
+		['Stop', 'Pressing Spin during a round shows the result at once, where allowed. Results are the same.'],
 		['+ / -', 'Raise or lower the bet through the available bet levels.'],
 		['Bet', 'Shows the current bet. The price of a round is the bet times the mode price.'],
 		['Balance', 'Your balance in your currency.'],
@@ -54,7 +55,9 @@
 		['Auto spin', 'Plays a chosen number of rounds after you confirm; stops on your loss or win limits.'],
 		['Buy bonus', 'Opens the Fate modes (Omen, Prophecy) and the Star and Tower bonus buys, with price, RTP and max win.'],
 		['Menu', 'Pay table, game rules, settings and sound.'],
-		['Sound', 'Turns sound on or off.'],
+		['Settings', 'Master, music and sound effect volume.'],
+		['Sound', 'Turns all sound on or off.'],
+		['Replay', 'In a replay, plays the same round again. Replays never place a bet.'],
 	];
 </script>
 
@@ -139,7 +142,16 @@
 		<p>
 			{t(`Game RTP ${(config.rtp * 100).toFixed(2)}%. Each round is independent. A round ends when it
 			reaches the maximum win of ${fmt(config.betModes.base.max_win)}x. Wins are shown in your currency
-			and added to your balance when the round ends. Malfunction voids all pays and plays.`)}
+			and added to your balance when the round ends.`)}
+		</p>
+		<p>
+			<!-- Engine general disclaimer template, verbatim (Engine [185];
+				stake-engine.com/docs/approval-guidelines/general-disclaimer, 2026-10-28). -->
+			{t(`Malfunction voids all wins and plays. A consistent internet connection is required. In the
+			event of a disconnection, reload the game to finish any uncompleted rounds. The expected return
+			is calculated over many plays. The game display is not representative of any physical device and
+			is for illustrative purposes only. Winnings are settled according to the amount received from the
+			Remote Game Server and not from events within the web browser. TM and © 2026 Engine.`)}
 		</p>
 	{/if}
 </div>

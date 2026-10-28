@@ -18,6 +18,11 @@
 			canvas {
 				touch-action: manipulation;
 			}
+			/* An inline canvas leaves a few px of line-box gap below it; the page was 2-4px taller
+			   than the viewport (Engine [227]). */
+			canvas {
+				display: block;
+			}
 		</style>
 	</head>
 	<body

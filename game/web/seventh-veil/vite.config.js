@@ -4,6 +4,7 @@ import { mergeConfig } from 'vite';
 // @ts-ignore
 import config from 'config-vite';
 import mockRgs from './dev/mockRgs.js';
+import { sharedPackagePatches } from './vite.patches.js';
 
 const { version } = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf-8'));
 
@@ -26,7 +27,7 @@ const https = fs.existsSync(path.join(certDir, 'cert.pem'))
 	: undefined;
 
 export default mergeConfig(config(), {
-	plugins: [stripSampleUrls(), mockRgs()],
+	plugins: [stripSampleUrls(), sharedPackagePatches(), mockRgs()],
 	resolve: {
 		alias: [
 			{ find: 'webfontloader', replacement: path.resolve('src/stubs/webfontloader.js') },

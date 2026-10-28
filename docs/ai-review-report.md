@@ -2,6 +2,61 @@
 
 **Prompt:** [ai-review/prompt.md](../ai-review/prompt.md), downloaded 2026-10-28 from https://studio.engine.io/docs-content/prompt.md.
 
+## Run 2 — after instructions 01–10, 2026-10-28
+
+**Summary:** 33 PASS · 0 FAIL · 1 AT RISK · 5 NEEDS A HUMAN · 1 N/A.
+- **How:** code was read and the game was run. The run used the local mock RGS (`dev/mockRgs.js`, real books) in headless Chromium (Playwright), at `https://localhost:3007`.
+- **Evidence:** screenshots are in `docs/screens/` (`t06-*`, `t07-*`, `t08-*`, `t10-*`, `run2-*`).
+- **Other checks:** `node --experimental-strip-types scripts/check_amount.ts` → `OK all values`; `scripts/check_external_urls.ps1` → exit 0.
+
+### At risk
+
+**[253] Distinct from existing titles and [217] content: AT RISK until the final art**
+- **Found:** the art and the loading logo are still the SDK `cluster` sample: "MINING MAYHEM" (`docs/screens/t08-replay-start.png`).
+- **Fix:** instructions 14–16.
+
+### Interception tests (the prompt's procedures)
+
+| Test | Result |
+|---|---|
+| #242 rewritten bet levels (1.00/1.40/1.60/2.00) | `+` stops at 2.00 and greys out; `−` stops at 1.00 and greys out (`run2-betlevels-*.png`) |
+| #187 interrupted round | bet 1.60, payout 1.2x, end-round aborted, reload → authenticate `round.active=true amount=1600000` → resumes, then the next `/wallet/play` has `amount: 1600000` |
+| #221 zero-win end-round | 0x rounds sent no end-round; the first end-round came only after a 1.2x win |
+| #222 insufficient balance | $0.50: BET and Space send 0 `/wallet/play`. $1 with Space held 25 s, 3 runs: 1–2 plays, 0 `ERR_IPB`, message "Insufficient balance…" (`t06-demo_b1_t8-hold.png`) |
+| #274 invalid rgs_url (`example.com`) | "Connection problem. Please reload the game."; no RGS request succeeded |
+| #240 lang `xx`, `en_US`, empty, `zh` | loads in English, 0 console errors |
+| #227 / sizes | scrollHeight = innerHeight at 1024×576, 400×225, 800×450 and 425×812 (fixed a 2–4 px overflow: `canvas{display:block}`) |
+| #77 / #78 social (`socialCasino` from jurisdiction, XSC) | PLAY, PLAY BONUS, SPIN, PLAY MENU, SELECT YOUR PLAY, PLAY on bonus cards, "1,000.00 SC" |
+| #171–#174 replay (Tower, EUR, 2.00) | "TOWER BONUS ×400 · €2.00 · REAL COST €800.00", win €2,288.00 (1144x × 2), REPLAY works twice, 0 wallet calls |
+| #172 bad values | `currency=JPY&amount=bad&lang=xx` → "¥1", English |
+| #243 replay at 400×225 | fits; title overlap fixed (`run2-*`, `t08-replay-400x225.png` taken before the fix) |
+| Jurisdiction | `minround3000`: 3.0–3.5 s between Space-hold rounds; HUD "Session 00:00:46 · Net −$7.80 · RTP 96.50%" |
+
+### Full table (changed rows only; all other rows as in Run 1)
+
+| ID | Verdict | Evidence |
+|---|---|---|
+| 275 | PASS | no loader in `src/` or the build |
+| 242 | PASS | interception test above; `vite.patches.js` stateBet snap |
+| 219 | PASS | `src/overrides/formatAmount.ts`; JPY ¥1, EUR €, CA$, MX$ (`check_amount.ts`) |
+| 273 | PASS | `$0.004`, `$0.012` (`check_amount.ts`) |
+| 222 | PASS | `src/game/actor.ts` guard; tests above |
+| 223 | PASS | `src/app.html` viewport `user-scalable=no`, `touch-action: manipulation` |
+| 193 / 195 / 194 | NEEDS A HUMAN (layout works) | `run2-size-*.png`: every control visible and usable. Mobile: the WIN label covers the bottom row of the board; revisit with the final UI (instructions 19) |
+| 227 | PASS | scroll check above |
+| 240 | PASS | `vite.patches.js` stateUrl lang |
+| 77 / 188 / 225 | PASS | `vite.patches.js` i18n patches, `wording.ts` |
+| 78 | PASS | "1,000.00 SC" |
+| 171 / 172 / 173 / 174 / 243 | PASS | `src/components/ui/UIReplay.svelte`, `Authenticate.svelte` replay |
+| 185 | PASS | template verbatim, `GameInfo.svelte` |
+| 235 | PASS | the button guide adds Stop, Settings and Replay |
+| 217 / 253 | AT RISK / NEEDS A HUMAN | sample art (instructions 14–16) |
+
+### For a person to check
+- **Final look at the four sizes** (after the new art): no overlaps, text readable at 400×225.
+- **Sound:** mute, then play a bonus and a big win; nothing should be audible.
+- **Art originality and content** ([217], [253]) once the sample art is replaced.
+
 ## Run 1 — baseline, 2026-10-28 (before fixes 03–10, after fix 01)
 
 **Summary:** 19 PASS · 13 FAIL · 2 AT RISK · 5 NEEDS A HUMAN · 1 N/A. Code was read only; the game was not run (the build was in progress).

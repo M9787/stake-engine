@@ -16,16 +16,16 @@ Math, modes and mechanics freeze after approval. So task 11 (math) must be done 
 
 | No. | Task | Phase | Depends on | Status |
 |---|---|---|---|---|
-| 01 | [Remove Engine loader](01-remove-engine-loader.md) | A | — | todo |
-| 02 | [Run Engine AI review](02-run-engine-ai-review.md) | A | 01 | todo |
-| 03 | [Currency and sub-cent amounts](03-currency-and-sub-cent.md) | A | 02 | todo |
-| 04 | [Mobile zoom and screen sizes](04-mobile-zoom-and-screen-sizes.md) | A | 02 | todo |
-| 05 | [Language fallback](05-language-fallback.md) | A | 02 | todo |
-| 06 | [Balance check and bet cap](06-balance-check-and-bet-cap.md) | A | 02 | todo |
-| 07 | [Social mode](07-social-mode.md) | A | 05 | todo |
-| 08 | [Replay](08-replay.md) | A | 03, 05 | todo |
-| 09 | [Rules and disclaimer](09-rules-and-disclaimer.md) | A | 11 (numbers) | todo |
-| 10 | [Jurisdiction flags](10-jurisdiction-flags.md) | A | 02 | todo |
+| 01 | [Remove Engine loader](01-remove-engine-loader.md) | A | — | done 2026-10-28 |
+| 02 | [Run Engine AI review](02-run-engine-ai-review.md) | A | 01 | done 2026-10-28 |
+| 03 | [Currency and sub-cent amounts](03-currency-and-sub-cent.md) | A | 02 | done 2026-10-28 |
+| 04 | [Mobile zoom and screen sizes](04-mobile-zoom-and-screen-sizes.md) | A | 02 | done 2026-10-28 |
+| 05 | [Language fallback](05-language-fallback.md) | A | 02 | done 2026-10-28 |
+| 06 | [Balance check and bet cap](06-balance-check-and-bet-cap.md) | A | 02 | done 2026-10-28 |
+| 07 | [Social mode](07-social-mode.md) | A | 05 | done 2026-10-28 |
+| 08 | [Replay](08-replay.md) | A | 03, 05 | done 2026-10-28 |
+| 09 | [Rules and disclaimer](09-rules-and-disclaimer.md) | A | 11 (numbers) | done 2026-10-28 |
+| 10 | [Jurisdiction flags](10-jurisdiction-flags.md) | A | 02 | done 2026-10-28 |
 | 11 | [Math rework](11-math-rework.md) | A | — | todo |
 | 12 | [Docs refresh](12-docs-refresh.md) | A | — | todo |
 | 13 | [Track assets and remove dead files](13-track-assets-and-clean.md) | B | — | todo |

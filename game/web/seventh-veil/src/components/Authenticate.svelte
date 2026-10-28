@@ -8,10 +8,13 @@
 -->
 <script lang="ts">
 	import { onMount, type Snippet } from 'svelte';
+	import { page } from '$app/state';
 
 	import { requestAuthenticate, requestReplay } from 'rgs-requests';
 	import { stateUrlDerived, stateBet, stateConfig, stateModal, stateUi } from 'state-shared';
 	import { API_AMOUNT_MULTIPLIER, MOST_USED_BET_INDEXES } from 'constants-shared/bet';
+
+	import { stateReplay } from '../game/stateReplay.svelte';
 
 	type Props = { children: Snippet };
 
@@ -133,9 +136,21 @@
 		}
 	};
 
+	// Replay has no session, so authenticate never runs: currency and bet come from the URL
+	// (Engine [172]). Bad or missing values fall back instead of breaking the replay.
+	const replayCurrency = () => {
+		const raw = (page.url.searchParams.get('currency') || '').toUpperCase();
+		return /^[A-Z]{3,5}$/.test(raw) ? raw : 'USD';
+	};
+	const replayBetAmount = () => {
+		const amount = stateUrlDerived.amount() / API_AMOUNT_MULTIPLIER;
+		return Number.isFinite(amount) && amount > 0 ? amount : 1;
+	};
+
 	const handleReplay = async () => {
-		stateBet.betAmount = (stateUrlDerived.amount() / API_AMOUNT_MULTIPLIER) || 0;
-		stateBet.wageredBetAmount = (stateUrlDerived.amount() / API_AMOUNT_MULTIPLIER) || 0;
+		stateBet.currency = replayCurrency();
+		stateBet.betAmount = replayBetAmount();
+		stateBet.wageredBetAmount = replayBetAmount();
 		stateBet.activeBetModeKey = stateUrlDerived.mode();
 
 		const data = await requestReplay({
@@ -158,6 +173,8 @@
 				active: true,
 				mode: stateUrlDerived.mode(),
 			};
+			stateReplay.round = { ...stateBet.betToResume };
+			stateReplay.costMultiplier = Number((data as any).costMultiplier) || 1;
 		}
 	};
 

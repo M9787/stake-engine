@@ -1,6 +1,6 @@
 <!--
 	Seventh Veil copy of components-ui-pixi UI.svelte (web-sdk packages are read-only).
-	Uses our UIDefault; replay UI stays shared.
+	Uses our UIDefault and our UIReplay.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -8,7 +8,7 @@
 	import { stateUi } from 'state-shared';
 
 	import UIDefault from './UIDefault.svelte';
-	import UIReplay from 'components-ui-pixi/src/components/UIReplay.svelte';
+	import UIReplay from './UIReplay.svelte';
 
 	type Props = {
 		gameName: Snippet;

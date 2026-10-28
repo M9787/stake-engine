@@ -6,6 +6,7 @@
 //   b<amount>  start balance in dollars (default 1000), e.g. demo_b5
 //   social     jurisdiction.socialCasino = true
 //   nobuy / noturbo / noauto / nospace  matching jurisdiction.disabled* flag
+//   c<CODE>    balance currency (default USD), e.g. demo_cJPY, demo_social_cXSC
 // Force the next round: POST /rgs/mock/force {"sessionID": "...", "next": "maxwin" | "bonus"}
 import fs from 'node:fs';
 import path from 'node:path';
@@ -38,6 +39,7 @@ const session = (sessionID) => {
 		const b = tokens.find((t) => /^b\d+(\.\d+)?$/.test(t));
 		sessions.set(sessionID, {
 			balance: Math.round((b ? Number(b.slice(1)) : 1000) * AMOUNT),
+			currency: (tokens.find((t) => /^c[A-Z]{3,5}$/.test(t)) || 'cUSD').slice(1),
 			round: null,
 			force: null,
 			jurisdiction: {
@@ -59,7 +61,7 @@ const session = (sessionID) => {
 	return sessions.get(sessionID);
 };
 
-const balance = (s) => ({ amount: s.balance, currency: 'USD' });
+const balance = (s) => ({ amount: s.balance, currency: s.currency });
 const fail = (code, message) => ({ status: 400, body: { error: code, message } });
 
 const routes = {

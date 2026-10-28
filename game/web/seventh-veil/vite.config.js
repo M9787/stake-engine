@@ -28,7 +28,11 @@ const https = fs.existsSync(path.join(certDir, 'cert.pem'))
 export default mergeConfig(config(), {
 	plugins: [stripSampleUrls(), mockRgs()],
 	resolve: {
-		alias: { webfontloader: path.resolve('src/stubs/webfontloader.js') },
+		alias: [
+			{ find: 'webfontloader', replacement: path.resolve('src/stubs/webfontloader.js') },
+			// Money formatting for all currencies and sub-cent wins (Engine [219], [273], [78]).
+			{ find: /^utils-shared\/amount$/, replacement: path.resolve('src/overrides/amount.ts') },
+		],
 	},
 	server: https ? { https } : {},
 	// Shown by GameVersion in the menu (package.json version).

@@ -3,10 +3,26 @@
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
+		<!-- No pinch or double-tap zoom on mobile (Engine [223]: width=device-width alone fails). -->
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+		/>
 		%sveltekit.head%
+		<style>
+			html,
+			body {
+				height: 100%;
+			}
+			body,
+			canvas {
+				touch-action: manipulation;
+			}
+		</style>
 	</head>
-	<body style="margin: 0; padding: 0; overflow: hidden; background-color: black">
+	<body
+		style="margin: 0; padding: 0; overflow: hidden; overscroll-behavior: none; background-color: black"
+	>
 		<div>%sveltekit.body%</div>
 	</body>
 </html>

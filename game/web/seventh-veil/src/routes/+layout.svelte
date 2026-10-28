@@ -5,6 +5,7 @@
 	import '../assets/fonts/fonts.css';
 	import Authenticate from '../components/Authenticate.svelte';
 	import Game from '../components/Game.svelte';
+	import JurisdictionHud from '../components/JurisdictionHud.svelte';
 	import { setContext } from '../game/context';
 
 	import messagesMap from '../i18n/messagesMap';
@@ -20,6 +21,7 @@
 	<Authenticate>
 		<LoadI18n {messagesMap}>
 			<Game />
+			<JurisdictionHud />
 		</LoadI18n>
 	</Authenticate>
 </GlobalStyle>

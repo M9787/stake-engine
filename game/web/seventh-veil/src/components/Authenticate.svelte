@@ -15,6 +15,7 @@
 	import { API_AMOUNT_MULTIPLIER, MOST_USED_BET_INDEXES } from 'constants-shared/bet';
 
 	import { stateReplay } from '../game/stateReplay.svelte';
+	import { stateSession } from '../game/stateSession.svelte';
 
 	type Props = { children: Snippet };
 
@@ -52,6 +53,7 @@
 				// },
 				stateBet.currency = authenticateData.balance.currency;
 				stateBet.balanceAmount = authenticateData.balance.amount / API_AMOUNT_MULTIPLIER;
+				stateSession.startBalance = stateBet.balanceAmount;
 			}
 
 			// config
@@ -81,7 +83,9 @@
 				// 	}
 				// }
 				const cfg = authenticateData.config;
+				// Merge onto the defaults so flags the RGS leaves out stay false/0, not undefined.
 				stateConfig.jurisdiction = {
+					...stateConfig.jurisdiction,
 					...(cfg.jurisdiction || {}),
 					socialCasino: !!cfg.jurisdiction?.socialCasino || stateUrlDerived.social(),
 				} as typeof stateConfig.jurisdiction;

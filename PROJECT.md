@@ -136,6 +136,7 @@ Books → `bookEventHandlerMap` → EmitterEvents. Event types: `reveal`, `winIn
 | Q11 | Buy-mode charging: the client multiplies only `activate` modes; the mock charges `amount × cost` for all modes. Confirm the real RGS does the same for buy modes | project owner | M6 |
 | Q12 | Social mode: shared SDK labels outside our code (buy-bonus dialog texts) may still use restricted words; our texts (rules, mode dialogs, error messages) go through `t()`. Check on Engine with `social=true` | agent | M6 |
 | Q13 | Once during demo testing the bet read $10 instead of $1 before a forced round; not reproduced in 7 later spins. Watch for it in M6 testing | agent | no |
+| Q14 | `jurisdiction.minimumRoundDuration` unit is not in the Engine docs (schema `rgs-fetcher/src/schema.ts` says `number`). `stateSession.svelte.ts` reads it as ms (values under 100 as seconds). Confirm with Engine support or a staging session that sets it | agent | M6 |
 
 ## 12. Sources
 

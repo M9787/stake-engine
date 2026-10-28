@@ -41,7 +41,11 @@ Status 2026-09-19: `[x]` verified, `[ ]` open. `(code)` = implemented, not yet v
 - [ ] Sound on/off toggle.
 - [ ] Autoplay needs explicit confirmation. No one-click consecutive bets.
 - [x] Turbo, autoplay and buy-bonus buttons hidden when `disabledTurbo`, `disabledAutoplay`, `disabledBuyFeature` (verified in demo `demo_nobuy_noturbo_noauto` 2026-09-19); space-hold turbo off when `disabledSpacebar` or `disabledTurbo`. Our `ui/UIDefault.svelte`, modals guarded in `GameModals.svelte`, `EnableJurisdiction.svelte` as backstop. In fast play, wins stay legible.
-- [ ] Fullscreen respects `disabledFullscreen`.
+- [x] Fullscreen respects `disabledFullscreen`: N/A, the game has no fullscreen control (`OnPressFullScreen` is only a click area).
+- [x] Super turbo respects `disabledSuperTurbo`: N/A, only one turbo speed (`stateBet.svelte.ts` `timeScale` 1 or 2).
+- [x] `disabledSlamstop`: Stop does not skip the round; stopping autoplay still works (`ui/ButtonBet.svelte` guard).
+- [x] `minimumRoundDuration`: each round waits out the minimum before the next (`game/actor.ts` `onPlayGame`); demo with `minround3000` measured 3,000-3,500 ms between rounds, 2026-10-28. Unit open: PROJECT.md Q14.
+- [x] `displaySessionTimer`, `displayNetPosition`, `displayRTP`: `components/JurisdictionHud.svelte` top-left line, hidden unless set; verified in demo 2026-10-28.
 - [ ] Works on mobile and in the mini-player.
 
 ### Win presentation

@@ -7,6 +7,8 @@
 //   social     jurisdiction.socialCasino = true
 //   nobuy / noturbo / noauto / nospace  matching jurisdiction.disabled* flag
 //   c<CODE>    balance currency (default USD), e.g. demo_cJPY, demo_social_cXSC
+//   minround<ms>  jurisdiction.minimumRoundDuration, e.g. demo_minround3000
+//   timer / net / rtp / noslam  displaySessionTimer / displayNetPosition / displayRTP / disabledSlamstop
 // Force the next round: POST /rgs/mock/force {"sessionID": "...", "next": "maxwin" | "bonus"}
 import fs from 'node:fs';
 import path from 'node:path';
@@ -48,13 +50,13 @@ const session = (sessionID) => {
 				disabledTurbo: tokens.includes('noturbo'),
 				disabledSuperTurbo: tokens.includes('noturbo'),
 				disabledAutoplay: tokens.includes('noauto'),
-				disabledSlamstop: false,
+				disabledSlamstop: tokens.includes('noslam'),
 				disabledSpacebar: tokens.includes('nospace'),
 				disabledBuyFeature: tokens.includes('nobuy'),
-				displayNetPosition: false,
-				displayRTP: false,
-				displaySessionTimer: false,
-				minimumRoundDuration: 0,
+				displayNetPosition: tokens.includes('net'),
+				displayRTP: tokens.includes('rtp'),
+				displaySessionTimer: tokens.includes('timer'),
+				minimumRoundDuration: Number((tokens.find((t) => /^minround\d+$/.test(t)) || 'minround0').slice(8)),
 			},
 		});
 	}

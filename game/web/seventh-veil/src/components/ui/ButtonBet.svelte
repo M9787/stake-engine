@@ -8,7 +8,7 @@
 	import { Container, Text } from 'pixi-svelte';
 	import { Button, type ButtonProps } from 'components-pixi';
 	import { OnHotkey } from 'components-shared';
-	import { stateBetDerived, stateConfig, stateModal } from 'state-shared';
+	import { stateBet, stateBetDerived, stateConfig, stateModal } from 'state-shared';
 
 	import UiSprite from 'components-ui-pixi/src/components/UiSprite.svelte';
 	import ButtonBetProvider from 'components-ui-pixi/src/components/ButtonBetProvider.svelte';
@@ -23,6 +23,12 @@
 	const guard = (key: string, onpress: () => void) => () => {
 		if (key.startsWith('spin') && lowBalance) {
 			stateModal.modal = { name: 'error', error: { error: 'ERR_IPB', message: 'insufficient balance' } };
+			return;
+		}
+		// jurisdiction.disabledSlamstop: no skipping to the result mid-round. Stopping autoplay
+		// (no more rounds after this one) stays allowed.
+		if (key.startsWith('stop') && stateConfig.jurisdiction?.disabledSlamstop) {
+			if (stateBetDerived.hasAutoBetCounter()) stateBet.autoSpinsCounter = 0;
 			return;
 		}
 		onpress();

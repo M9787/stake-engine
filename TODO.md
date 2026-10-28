@@ -9,12 +9,18 @@ Key rules learned today:
 - Common low-rating causes: "over-reliance on generic AI-generated assets", mismatched art styles, shallow gameplay.
 - Math critical tests: our game passes all of them (see Math).
 
-## Next 5 actions
-1. Me: code fixes C1–C6 (checklist failures), rebuild, re-package `upload\front`.
-2. You: add the wallet and confirm the provider name and slug.
-3. You: upload math, then frontend (Import Files → Start Sync). Me: publish, with your OK.
-4. Me: write `docs/09-assets.md` (art and sound spec with prompts). You: start generating.
-5. Me: math fixes M1–M2 (max-win odds, buy-mode simulation count), then re-upload the math.
+## Next 5 actions (updated 2026-10-28)
+Every task now has its own step-by-step file: agent tasks in [instructions/](instructions/README.md), your tasks in [instructions_human/](instructions_human/README.md). Those folders replace the tables below as the work plan. The tables stay as history.
+1. Me: [instructions/01](instructions/01-remove-engine-loader.md), remove the Engine loader. Then [02](instructions/02-run-engine-ai-review.md), run Engine's AI review prompt.
+2. Me: [instructions/11](instructions/11-math-rework.md), math rework: more mid-size wins, max win better than 1 in 10M, buy floors, 100k sims.
+3. Me: [instructions/03–10](instructions/README.md), checklist code fixes.
+4. You: [instructions_human/01](instructions_human/01-wallet.md) wallet, then [02](instructions_human/02-provider-profile.md) provider name and slug.
+5. Me: [instructions/13–14](instructions/14-asset-spec.md), asset spec with prompts. Then you: [instructions_human/03–05](instructions_human/03-midjourney-art.md), art, music and sound.
+
+Key rules updated 2026-10-28 (studio.engine.io/docs, read while logged in):
+- 3 reviewers × 0–3★, need ≥6/9 points. **Only 3★ games enter New Releases, Slots and Burst Games**, so 3★ is the real target.
+- Math limits are now one set: max payout 100,000× (77,777 passes), exposure $50M. The "$15M / 2-star tier" lines below are stale.
+- Engine publishes an AI review prompt with the reviewer checklist IDs: https://studio.engine.io/docs/ai-review.
 
 ## 1. Studio setup (You)
 | Status | Task | Owner | P | Score | Evidence |

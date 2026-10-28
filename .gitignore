@@ -45,3 +45,7 @@ game/web/seventh-veil/.svelte-kit/
 
 # Engine upload staging (built from web-sdk output)
 upload/
+
+# Raw art/audio inputs from the owner (cleaned outputs go to game\web\seventh-veil\static)
+art_in/
+audio_in/

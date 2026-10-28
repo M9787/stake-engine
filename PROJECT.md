@@ -154,3 +154,12 @@ Books → `bookEventHandlerMap` → EmitterEvents. Event types: `reveal`, `winIn
 | https://studio.engine.io/docs/approval-guidelines/general-disclaimer | required rules disclaimer text | 2026-09-19 |
 | https://github.com/StakeEngine/math-sdk | math SDK, `0_0_cluster` base, 3-star limits in `utils/rgs_verification.py` | 2026-09-19 |
 | https://github.com/engineio/web-sdk | web SDK (moved from StakeEngine/web-sdk), `apps/cluster` base | 2026-09-19 |
+| https://studio.engine.io/docs/approval-guidelines/game-quality-rankings | 0–3★ in thirds from 3 reviewers; publish needs ≥6/9 points; fail locks the thread 3 days; only 3★ in New Releases/Slots/Burst; New Releases ordered by team 30-day Insights rank | 2026-10-28 |
+| https://studio.engine.io/docs/approval-guidelines/math-verification | one limit set: RTP 96.0–96.7%, max payout 100,000×, exposure $50M, bet cost $500k; penalty schedule by failed classes; max win more frequent than 1 in 10M; 100k–1M sims; intermediate wins expected | 2026-10-28 |
+| https://studio.engine.io/docs/ai-review | Engine review prompt, run locally, same guideline IDs as reviewers | 2026-10-28 |
+| https://studio.engine.io/docs-content/prompt.md | guideline IDs ([181]…[275]), reviewer sizes 1024×576/400×225/800×450/425×812, test currencies USD EUR CAD MXN JPY XSC XGC | 2026-10-28 |
+| https://studio.engine.io/docs/promote | promotion channels: X, Stake followers (~30% email open), giveaways, Stake Challenges ticket, streamer rev-share, Watchtowr, promoteonstake.com | 2026-10-28 |
+| https://stake-engine.com/docs/distribution | Only on Stake 10% GGR vs network 5%+5%; fixed at launch | 2026-10-28 |
+| https://stake-engine.com/docs/payments | payout 1st of month, USDT/USDC ERC-20, new wallet waits 3 days | 2026-10-28 |
+| https://stake-engine.com/docs/approval-guidelines/game-tile-requirements | Media Editor, 3:4 and 16:9, no added words or multipliers on art | 2026-10-28 |
+| https://studio.engine.io/teams/dumalex/games/oracle-of-sevens/approval | Readiness: no tile, no cover, math and front not published, 0/1 reviews | 2026-10-28 |

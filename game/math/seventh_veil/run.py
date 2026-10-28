@@ -19,13 +19,13 @@ if __name__ == "__main__":
     compression = True
     profiling = False
 
-    # Production counts (docs/07-math-spec.md): 1e5 spin modes, 5e4 buy modes.
+    # Production counts (docs/07-math-spec.md): 1e5 in every mode (Engine guideline 100k-1M).
     num_sim_args = {
         "base": int(1e5),
         "omen": int(1e5),
         "prophecy": int(1e5),
-        "star": int(5e4),
-        "tower": int(5e4),
+        "star": int(1e5),
+        "tower": int(1e5),
     }
 
     # SV_SKIP_SIMS=1 reuses existing books and only re-runs the optimizer (fast retune).

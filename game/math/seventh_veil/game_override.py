@@ -53,3 +53,7 @@ class GameStateOverride(GameExecutables):
 
             if self.win_manager.running_bet_win == 0 and self.criteria != "0":
                 self.repeat = True
+
+            floor = self.config.buy_floor.get(self.betmode)
+            if floor is not None and self.criteria == "freegame" and self.final_win < floor:
+                self.repeat = True

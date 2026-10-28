@@ -34,17 +34,28 @@ rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal
 cd optimization_program; rustup override set stable-x86_64-pc-windows-gnu; cargo build --release; cd ..
 ```
 
-`run.py` switches: `num_sim_args` (sims per mode), `run_optimization` (Rust optimizer), `run_analysis`, `run_format_checks` (SDK "3-star" volatility checks).
+`run.py` switches: `num_sim_args` (sims per mode), `run_optimization` (Rust optimizer), `run_analysis`, `run_format_checks` (SDK format and old "3-star" volatility checks; the Engine limits are checked by `scripts\math_stats.py`).
+
+Environment switches (`games\seventh_veil\run.py`):
+
+| Variable | Effect |
+|---|---|
+| `SV_SKIP_SIMS=1` | Reuse existing books; re-run only configs, the optimizer and format checks (fast retune). |
+| `SV_MODES=star,tower` | Limit **only the optimizer** to these modes. Sims (if not skipped) still run for every mode. |
+
+```powershell
+$env:SV_SKIP_SIMS='1'; $env:SV_MODES='base'; Push-Location math-sdk; .\env\Scripts\python.exe games\seventh_veil\run.py; Pop-Location; Remove-Item Env:SV_SKIP_SIMS, Env:SV_MODES
+```
 
 ### Game files (`games\seventh_veil\`)
 
 | File | Owns |
 |---|---|
-| `game_config.py` | ids, 7x7 board, paytable, scatter triggers, x1024 cap, Tower settings, 5 bet modes |
+| `game_config.py` | ids, 7x7 board, paytable, scatter triggers, x1024 cap, Star/Tower pre-charge, buy floor, 5 bet modes |
 | `gamestate.py` | spin loop: draw → clusters → tumble → charge grid; bonus loop |
 | `game_executables.py` | charged-grid update (mark → x2 → double) |
 | `game_calculations.py` | cluster pay × sum of charged spots |
-| `game_override.py` | per-spin reset, Star/Tower choice, Tower pre-charge |
+| `game_override.py` | per-spin reset, Star/Tower choice, pre-charge (Tower 12 spots, Star 5 spots at x2), buy floor re-sim |
 | `game_events.py` | custom events `updateGrid`, `bonusVariant` |
 | `game_optimization.py` | optimizer RTP / hit-rate targets per mode |
 | `reels\*.csv` | BR0 (base), FR0 (bonus), WCAP (max-win forcing) |

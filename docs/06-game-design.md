@@ -83,7 +83,7 @@ Max win 77,777x ends the round (`wincap`). The max-win panel plays, relabelled "
 | Cash-out, gamble, jackpots | Engine rule; stateless only |
 | 5+ buy tiers | Waylanders complexity complaint; 2 buys cover the choice |
 | Many tiny sub-stake "wins" | Gates of Olympus / Sugar Rush complaint; every base pay ≥1.2x instead |
-| Rare, invisible bonuses | Fate tiers make bonus odds a visible choice (1 in 400 / 150 / 60) |
+| Rare, invisible bonuses | Fate tiers make bonus odds a visible choice (1 in 400 / 150 / 80) |
 | Loss-disguised-as-win, fake near-miss | [08](08-compliance.md) |
 
 ## Verify

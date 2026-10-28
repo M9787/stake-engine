@@ -13,9 +13,18 @@ SPIN_TARGETS = {
     # Iteration 4 rebalance: RTP moved from the bonus into base hits so sessions last longer
     # (base hit 1 in 4 = 25%, avg base win ~2.5x). Keep avg base win >= ~2.3x: lower targets
     # sit below the raw median and the optimizer fails to converge (docs/07).
-    "base": (0.004, 0.330, 400, 0.631, 4.0),
-    "omen": (0.004, 0.561, 150, 0.400, 5.0),
-    "prophecy": (0.004, 0.450, 60, 0.511, 3.0),
+    # Task 11 (2026-10-28): wincap share raised so the max win is better than 1 in 10M
+    # (odds = cap rtp x cost / 77,777); prophecy bonus 1 in 80 so it averages ~90x, near a Star buy.
+    "base": (0.010, 0.324, 400, 0.631, 4.0),
+    "omen": (0.008, 0.557, 150, 0.400, 5.0),
+    "prophecy": (0.006, 0.559, 80, 0.400, 3.0),
+}
+# Task 11: lift for 500-1,000x and 1,000-5,000x bonus results (stream-sized mid wins). Base needs the
+# strongest lift: its pool has the fewest bonus books in that range (docs/07 Results).
+MID_WIN_LIFT = {
+    "base": (4.0, 15.0),
+    "omen": (2.0, 4.0),
+    "prophecy": (2.0, 4.0),
 }
 # mode: (wincap rtp, freegame rtp)
 BUY_TARGETS = {
@@ -23,8 +32,9 @@ BUY_TARGETS = {
     "tower": (0.0004, 0.9646),
 }
 # mode: (min_m2m, scaling rules). Star damps sub-50x results and lifts 50-200x to raise its median.
+# Results below the buy floor (game_config.buy_floor) are never simulated.
 BUY_SHAPES = {
-    "star": (1.0, [((0, 20), 0.3), ((20, 50), 0.5), ((50, 200), 4.0), ((5000, 77776), 0.5)]),
+    "star": (1.0, [((10, 20), 0.15), ((20, 50), 0.5), ((50, 200), 4.0), ((5000, 77776), 0.5)]),
     "tower": (4, [((20, 50), 0.9), ((5000, 77776), 0.5)]),
 }
 
@@ -85,9 +95,10 @@ class OptimizationSetup:
                         # Lift 1-6x base wins so more spins pay above the stake.
                         {"criteria": "basegame", "scale_factor": 4.0, "win_range": (1, 3), "probability": 1.0},
                         {"criteria": "basegame", "scale_factor": 2.0, "win_range": (3, 6), "probability": 1.0},
-                        {"criteria": "basegame", "scale_factor": 0.5, "win_range": (20, 1000), "probability": 1.0},
+                        # Task 11: lift 500-5,000x bonus results (stream-sized mid wins); no mid-win damping.
+                        {"criteria": "freegame", "scale_factor": MID_WIN_LIFT[mode][0], "win_range": (500, 1000), "probability": 1.0},
+                        {"criteria": "freegame", "scale_factor": MID_WIN_LIFT[mode][1], "win_range": (1000, 5000), "probability": 1.0},
                         {"criteria": "freegame", "scale_factor": 0.8, "win_range": (5000, 20000), "probability": 1.0},
-                        {"criteria": "freegame", "scale_factor": 0.7, "win_range": (150, 1000), "probability": 1.0},
                     ]
                 ).return_dict(),
                 "parameters": spin_parameters(),

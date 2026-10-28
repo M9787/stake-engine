@@ -52,7 +52,7 @@ const buildBetModes = (): BetModeMeta => ({
 		'prophecy',
 		'activate',
 		'FATE: PROPHECY',
-		`Price 2x per spin. Bonus about 1 in 60 spins. Many wins return less than the spin price. ${rtpText('prophecy')}`,
+		`Price 2x per spin. Bonus about 1 in 80 spins. Many wins return less than the spin price. ${rtpText('prophecy')}`,
 	),
 	STAR: mode(
 		'STAR',

@@ -30,8 +30,7 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Game source: dev-only placeholder art (sample assets, not ours) and caches
-game/web/seventh-veil/static/
+# Game source caches (static\ is tracked since 2026-10-28: assets sync from game\ into web-sdk\)
 game/web/seventh-veil/node_modules/
 game/web/seventh-veil/.svelte-kit/
 .mock-rgs/
@@ -49,3 +48,6 @@ upload/
 # Raw art/audio inputs from the owner (cleaned outputs go to game\web\seventh-veil\static)
 art_in/
 audio_in/
+
+# Asset pipeline venv (rembg, instruction 15)
+.venv-assets/

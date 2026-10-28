@@ -1,6 +1,7 @@
 # sync.ps1 - copy game source of truth (stake\game\) into the SDK clones.
 # One direction only: edit in stake\game\, then run this. Generated output
-# (math library\, web node_modules\, .svelte-kit\, static\, .mock-rgs\) in the clones is never touched.
+# (math library\, web node_modules\, .svelte-kit\, .mock-rgs\) in the clones is never touched.
+# static\ (images, fonts, audio) is mirrored like source since 2026-10-28 (instruction 13).
 # Usage: powershell -ExecutionPolicy Bypass -File scripts\sync.ps1 [-WhatIf]
 
 param([switch]$WhatIf)
@@ -8,7 +9,7 @@ param([switch]$WhatIf)
 $root = Split-Path -Parent $PSScriptRoot
 $pairs = @(
     @{ Src = 'game\math\seventh_veil'; Dst = 'math-sdk\games\seventh_veil'; Skip = @('library', '__pycache__') },
-    @{ Src = 'game\web\seventh-veil';  Dst = 'web-sdk\apps\seventh-veil';   Skip = @('node_modules', '.svelte-kit', '.turbo', 'static', '.mock-rgs') }
+    @{ Src = 'game\web\seventh-veil';  Dst = 'web-sdk\apps\seventh-veil';   Skip = @('node_modules', '.svelte-kit', '.turbo', '.mock-rgs') }
 )
 
 $failed = 0

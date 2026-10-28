@@ -26,11 +26,11 @@ Math, modes and mechanics freeze after approval. So task 11 (math) must be done 
 | 08 | [Replay](08-replay.md) | A | 03, 05 | done 2026-10-28 |
 | 09 | [Rules and disclaimer](09-rules-and-disclaimer.md) | A | 11 (numbers) | done 2026-10-28 |
 | 10 | [Jurisdiction flags](10-jurisdiction-flags.md) | A | 02 | done 2026-10-28 |
-| 11 | [Math rework](11-math-rework.md) | A | — | todo |
-| 12 | [Docs refresh](12-docs-refresh.md) | A | — | todo |
-| 13 | [Track assets and remove dead files](13-track-assets-and-clean.md) | B | — | todo |
-| 14 | [Asset spec docs/09](14-asset-spec.md) | B | 13 | todo |
-| 15 | [Asset pipeline script](15-asset-pipeline.md) | B | 14 | todo |
+| 11 | [Math rework](11-math-rework.md) | A | — | done 2026-10-28 |
+| 12 | [Docs refresh](12-docs-refresh.md) | A | — | done 2026-10-28 |
+| 13 | [Track assets and remove dead files](13-track-assets-and-clean.md) | B | — | done 2026-10-28 |
+| 14 | [Asset spec docs/09](14-asset-spec.md) | B | 13 | done 2026-10-28 |
+| 15 | [Asset pipeline script](15-asset-pipeline.md) | B | 14 | done 2026-10-28 |
 | 16 | [Replace sample art with static sprites](16-replace-sample-art.md) | B | 15, human 03 | todo |
 | 17 | [Signature moment: multiplier grid](17-multiplier-grid-moment.md) | B | 16 | todo |
 | 18 | [Game feel](18-game-feel.md) | B | 16 | todo |

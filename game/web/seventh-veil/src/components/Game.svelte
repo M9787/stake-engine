@@ -4,7 +4,7 @@
 	import { EnablePixiExtension } from 'components-pixi';
 	import { EnableHotkey } from 'components-shared';
 	import { MainContainer } from 'components-layout';
-	import { App, Text, REM } from 'pixi-svelte';
+	import { App } from 'pixi-svelte';
 	import { stateModal } from 'state-shared';
 
 	import { UiGameName } from 'components-ui-pixi';
@@ -94,19 +94,9 @@
 			{#snippet gameName()}
 				<UiGameName name="ORACLE OF SEVENS" />
 			{/snippet}
-			{#snippet logo()}
-				<Text
-					anchor={{ x: 1, y: 0 }}
-					text="ORACLE OF SEVENS"
-					style={{
-						fontFamily: 'proxima-nova',
-						fontSize: REM * 1.5,
-						fontWeight: '600',
-						lineHeight: REM * 2,
-						fill: 0xffffff,
-					}}
-				/>
-			{/snippet}
+			<!-- Logo art comes with the final assets (instructions/19). Until then no second title:
+				it overlapped the game name at popout S 400x225 (Engine [195]). -->
+			{#snippet logo()}{/snippet}
 		</UI>
 		<Win />
 		<FreeSpinIntro />

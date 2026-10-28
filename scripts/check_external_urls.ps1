@@ -1,6 +1,7 @@
-# check_external_urls.ps1 - fail if the frontend build references an external host.
+﻿# check_external_urls.ps1 - fail if the frontend build references an external host.
 # Stake Engine serves games as static files and forbids loading anything from outside the bundle.
-# Scans the uploaded part of the build: .svelte-kit\output\client and \prerendered (docs/05 step 4).
+# Scans the uploaded part of the build: .svelte-kit\output\client and \prerendered, plus the
+# folders we actually upload when they exist: web-sdk\apps\seventh-veil\build and upload\front (docs/05 step 4).
 # Allowed hosts appear only in licence headers and code comments of bundled libraries (not requests).
 # Usage: powershell -ExecutionPolicy Bypass -File scripts\check_external_urls.ps1
 # Exit code: 0 = no external URLs, 1 = hits found or no build output.
@@ -8,6 +9,11 @@
 $root = Split-Path -Parent $PSScriptRoot
 $out = Join-Path $root 'web-sdk\apps\seventh-veil\.svelte-kit\output'
 if (-not (Test-Path $out)) { Write-Host "FAIL  no build output at $out"; exit 1 }
+$scan = @((Join-Path $out 'client'), (Join-Path $out 'prerendered'))
+foreach ($extra in @('web-sdk\apps\seventh-veil\build', 'upload\front')) {
+    $dir = Join-Path $root $extra
+    if (Test-Path $dir) { $scan += $dir; Write-Host "scan  $extra" }
+}
 
 # Strings that are not requests: XML namespaces, spec/licence/doc links inside library code,
 # and the SvelteKit placeholder origin.
@@ -19,7 +25,7 @@ $allow = @(
 )
 
 $hits = @{}
-Get-ChildItem (Join-Path $out 'client'), (Join-Path $out 'prerendered') -Recurse -File -Include *.js, *.html, *.css, *.json | ForEach-Object {
+Get-ChildItem $scan -Recurse -File -Include *.js, *.html, *.css, *.json | ForEach-Object {
     $file = $_.FullName.Substring($root.Length + 1)
     foreach ($m in (Select-String -Path $_.FullName -Pattern 'https?://[A-Za-z0-9.\-]+[^\s"''`)<>]*' -AllMatches)) {
         foreach ($u in $m.Matches.Value) {

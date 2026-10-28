@@ -9,7 +9,7 @@ Ship **Oracle of Sevens** to Stake Engine: a mystic-tarot 7x7 cluster-tumble slo
 Player-visible name is Oracle of Sevens (Studio: team `dumalex`, game `oracle-of-sevens` on studio.engine.io). Internal ids keep the working name `seventh_veil` / `seventh-veil`.
 Our code lives in `game\math\seventh_veil` and `game\web\seventh-veil` (tracked here). `scripts\sync.ps1` copies it into the SDK clones, where it builds and runs.
 
-DONE test: game approved on Stake Engine with ≥2 stars and live. Game Quality Rankings: 1 star = not published (the public checklist's "≥1 star" is outdated).
+DONE test: game approved on Engine (≥6/9 review points) and live; target 3★, because only 3★ games enter New Releases, Slots and Burst Games ([docs/00](docs/00-platform.md) steps 11–12).
 
 ## 2. Non-Goals
 
@@ -69,7 +69,7 @@ Open work, scored and prioritized: [TODO.md](TODO.md).
 | M1 | SDKs cloned, math venv | `Test-Path math-sdk\env, web-sdk\apps\cluster` both True | done |
 | M2 | Math prototype | `publish_files\` has index.json + 5 books + 5 lookup CSVs | done |
 | M3 | Math tuned (prototype) | `math_stats.py`: all modes RTP 0.9635–0.9665, 3-star fails empty | done |
-| M3b | Math final | base "win > cost" ≥ 8%; production run (100k spin / 50k buy sims) passes M3 | done (base win > cost 25.3% after the M5b rebalance; docs/07 Results) |
+| M3b | Math final | base "win > cost" ≥ 8%; production run (100k sims in every mode, since task 11 2026-10-28) passes M3 | done (base win > cost 25.3% after the M5b rebalance; docs/07 Results) |
 | M4 | Frontend fork, placeholder art | `pnpm run build --filter=seventh-veil` makes `index.html` | done |
 | M5 | Contract + storybook + compliance core | `books_to_stories.py --check` empty; storybook plays base/star/tower books | done; open items in docs/08 |
 | M5b | Balance + local play + hardening | `math_stats.py --sessions`: all modes pass, base hit ≥23%, base median session ≥300 spins; `check_external_urls.ps1` exit 0; demo server plays 1 round per mode | done except browser rounds for omen/prophecy/star/tower (their charges and books checked against the mock API only). Base hit 25.3%, median 338 spins; URL check exit 0; base rounds, max win, jurisdiction, social and replay played in the browser 2026-09-19 |
@@ -123,20 +123,22 @@ Books → `bookEventHandlerMap` → EmitterEvents. Event types: `reveal`, `winIn
 
 | # | Question | Owner | Blocking? |
 |---|---|---|---|
-| Q1 | Create Stake Engine account; read login-gated checklist; confirm RTP range and mode-count rules | project owner | M6 |
+| Q1 | ~~Account and checklist~~ closed 2026-10-28: team `dumalex` exists; checklist, RTP band (96.0–96.7%) and mode limit (≤20) read in Studio docs | — | no |
 | Q2 | Push this repo (with `game\`) to your own GitHub for backup | project owner | M6 |
 | Q3 | ~~Ante-mode value~~ closed 2026-09-19: retuned (omen base RTP 0.30 → 0.40) and worded honestly in rules and dialogs | — | no |
 | Q4 | ~~Jurisdiction buttons~~ closed 2026-09-19: our `ui/UIDefault.svelte` hides turbo/autoplay/buy; verified in demo (`demo_nobuy_noturbo_noauto`) | — | no |
 | Q5 | Replay link: the SDK keeps no round/event ID in state, so the game cannot build a "copy replay link". Replay mode itself works (verified with mock `/bet/replay`). Confirm on Engine whether its UI provides the link | project owner | M6 |
-| Q6 | ~~Engine caps~~ closed 2026-09-19: max cost ≤2,000×, max win ≤500,000×; bet-level template set by exposure (2-star tier $15M / $100k bet cost) — studio.engine.io/docs math-verification | — | no |
+| Q6 | ~~Engine caps~~ closed 2026-10-28: one limit set for every game — RTP 96.0–96.7%, max payout 100,000× (77,777× passes), exposure $50M and bet cost $500k at 0 failed classes; penalty schedule in [docs/07](docs/07-math-spec.md) — studio.engine.io/docs math-verification | — | no |
 | Q7 | Tarot theme regional review risk | project owner | M6 |
 | Q8 | ~~External URLs~~ closed 2026-09-19: Typekit removed, `webfontloader` stubbed, Inter (OFL) bundled, sample URLs stripped; `check_external_urls.ps1` exit 0 | — | no |
 | Q9 | RGS mode names are lower case (`base`), web keys upper case (`BASE`), as in the SDK samples. Confirm RGS matching is case-insensitive | project owner | M6 |
-| Q10 | ~~Upload limit~~ closed 2026-09-19: ≤4.2 GB per books file, ≤10M events per mode; ours max 164 MB | — | no |
+| Q10 | ~~Upload limit~~ closed 2026-09-19: ≤4.2 GB per books file, ≤10M events per mode; ours max 352.7 MB (tower, 100k sims, 2026-10-28) | — | no |
 | Q11 | Buy-mode charging: the client multiplies only `activate` modes; the mock charges `amount × cost` for all modes. Confirm the real RGS does the same for buy modes | project owner | M6 |
 | Q12 | Social mode: shared SDK labels outside our code (buy-bonus dialog texts) may still use restricted words; our texts (rules, mode dialogs, error messages) go through `t()`. Check on Engine with `social=true` | agent | M6 |
 | Q13 | Once during demo testing the bet read $10 instead of $1 before a forced round; not reproduced in 7 later spins. Watch for it in M6 testing | agent | no |
 | Q14 | `jurisdiction.minimumRoundDuration` unit is not in the Engine docs (schema `rgs-fetcher/src/schema.ts` says `number`). `stateSession.svelte.ts` reads it as ms (values under 100 as seconds). Confirm with Engine support or a staging session that sets it | agent | M6 |
+| Q15 | Engine "Maximum Std Dev (any mode) 60.0" does not say if std is divided by the mode cost. Raw std: star 212, tower 444 (fail if raw); per cost 2.1 / 1.1. `math_stats.py` passes on std ÷ cost. If raw, Volatility is 1 failed class: exposure $25M. Confirm in Studio readiness after math upload | agent | M6 |
+| Q16 | ElevenLabs self-serve **music** terms exclude "Studio Games"; whether its **sound effects** terms allow a commercial online slot on Starter is not confirmed. docs/09 uses CC0 SFX until this is closed. Check elevenlabs.io/terms-of-use and the SFX terms, or ask support | project owner | M6 |
 
 ## 12. Sources
 
@@ -164,3 +166,5 @@ Books → `bookEventHandlerMap` → EmitterEvents. Event types: `reveal`, `winIn
 | https://stake-engine.com/docs/payments | payout 1st of month, USDT/USDC ERC-20, new wallet waits 3 days | 2026-10-28 |
 | https://stake-engine.com/docs/approval-guidelines/game-tile-requirements | Media Editor, 3:4 and 16:9, no added words or multipliers on art | 2026-10-28 |
 | https://studio.engine.io/teams/dumalex/games/oracle-of-sevens/approval | Readiness: no tile, no cover, math and front not published, 0/1 reviews | 2026-10-28 |
+| https://studio.engine.io/docs/approval-guidelines/math-verification | Non-critical limits: std ≤60, CVaR per-stake ≤700 / absolute ≤50,000, raw P(≥5k/10k/25k/50k/100k) ≤0.05/0.01/0.005/0.001/0.0005, ETL>40× ≤0.9, ETL>10k ≤0.8, sum ≤1.5, absolute sum ≤10,000; 6 failure classes; penalty schedule 0→$50M/$500k … 6→$0.5M/$10k | 2026-10-28 |
+| https://studio.engine.io/docs | Platform renamed "Stake Engine" → "Engine" (studio.engine.io, docs under /docs); older stake-engine.com URLs still resolve | 2026-10-28 |

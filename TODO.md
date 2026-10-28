@@ -5,7 +5,7 @@ Score = Impact (1–5) × Urgency (1–5), out of 25. Priority: P0 blocks everyt
 Owner: **You** = project owner, **Me** = agent.
 
 Key rules learned today:
-- **1 star = not published.** We need **≥2 stars** (Game Quality Rankings).
+- **Rating:** 3 reviewers × 0–3★ in thirds; publishing needs ≥6/9 points; only 3★ games enter the shelves (docs/00 steps 11–12).
 - Common low-rating causes: "over-reliance on generic AI-generated assets", mismatched art styles, shallow gameplay.
 - Math critical tests: our game passes all of them (see Math).
 
@@ -19,7 +19,7 @@ Every task now has its own step-by-step file: agent tasks in [instructions/](ins
 
 Key rules updated 2026-10-28 (studio.engine.io/docs, read while logged in):
 - 3 reviewers × 0–3★, need ≥6/9 points. **Only 3★ games enter New Releases, Slots and Burst Games**, so 3★ is the real target.
-- Math limits are now one set: max payout 100,000× (77,777 passes), exposure $50M. The "$15M / 2-star tier" lines below are stale.
+- Math limits are now one set: max payout 100,000× (77,777 passes), exposure $50M, bet cost $500k, RTP 96.0–96.7% (PROJECT.md Q6).
 - Engine publishes an AI review prompt with the reviewer checklist IDs: https://studio.engine.io/docs/ai-review.
 
 ## 1. Studio setup (You)
@@ -38,10 +38,10 @@ Key rules updated 2026-10-28 (studio.engine.io/docs, read while logged in):
 | ❌ | Upload math: Files → Import Files → `math-sdk\games\seventh_veil\library\publish_files` → Start Sync | You | P0 | 5×5=25 | Files: "No files uploaded yet" |
 | ❌ | Upload frontend: `upload\front` → Start Sync | You | P0 | 5×5=25 | same |
 | ❌ | Publish Game → Math, then Front End (I ask first) | Me+You | P0 | 5×5=25 | Readiness: both "Not published" |
-| ❌ | Readiness: math validation and bet-level template valid | Me | P0 | 5×4=20 | template sized by exposure: 77,777 × max bet ≤ $15M means max bet ≤ $192 |
+| ❌ | Readiness: math validation and bet-level template valid | Me | P0 | 5×4=20 | template sized by exposure: 77,777 × max bet ≤ $50M (0 failed classes) means max bet ≤ $642 |
 | ❌ | Staging play: 1 round per mode; loss sends no end-round; low-balance play is blocked; reload mid-bonus restores the bet; `social=true`; replay | Me | P1 | 4×4=16 | checklist PreChecks and RGS items |
 | ❌ | Test on popout S/L, mobile, older Android/iOS | Me+You | P1 | 4×3=12 | checklist Responsive |
-| ✅ | Q10 upload size closed: limit is 4.2 GB per books file and 10M events per mode; ours is 164 MB max | — | — | — | math-verification page |
+| ✅ | Q10 upload size closed: limit is 4.2 GB per books file and 10M events per mode; ours is 352.7 MB max (2026-10-28) | — | — | — | math-verification page |
 
 ## 3. Code fixes from the submission checklist (Me; web-sdk packages are read-only, so fix via our copies or a Vite rewrite like the existing constants.ts one)
 | Status | Task | Owner | P | Score | Evidence |
@@ -62,15 +62,15 @@ Key rules updated 2026-10-28 (studio.engine.io/docs, read while logged in):
 | Status | Task | Owner | P | Score | Evidence |
 |---|---|---|---|---|---|
 | ✅ | Critical tests pass: base 1.0× is cheapest; base SD 19.47 (≥0.6); RTP 96.50% in all modes (90–96.7, spread 0); max 77,777× (≤500k); max cost 400× (≤2000×); hit ≥1 in 50 in every mode (base 1/4.0) | — | — | — | own metrics, math-verification page |
-| ✅ | Non-critical: fails only "max payout multiplier" at the 2-star tier (77,777 > 50,000), which is 1 failed class, so caps stay $15M / $100k. 3-star tier: 0 failures | — | — | — | P≥5k 0.00008 max, ETL40 ≤0.654, CVaR per-stake ≤178, absolute ≤3,692 |
+| ✅ | Non-critical (one limit set, 2026-10-28): 0 failed classes in `math_stats.py` (std taken per cost, PROJECT.md Q15), so caps stay $50M / $500k | — | — | — | docs/07 Results |
 | ❌ M1 | Max win odds should be better than 1 in 10M: base is 1 in 19.4M, omen 1 in 15.6M. Raise the max-win weight in the optimizer targets, rerun, run `math_stats` | Me | P1 | 4×3=12 | "typically more frequent than 1 in 10,000,000" |
-| ❌ M2 | Buy modes have 50k simulations; the guideline is 100k–1M. Rerun star/tower at 100k (books about 600 MB total, OK) | Me | P2 | 3×3=9 | math-verification "Summary statistics" |
+| ✅ M2 | Buy modes rerun at 100k simulations (2026-10-28, task 11): books 860 MB total, max 352.7 MB per file | Me | P2 | 3×3=9 | math-verification "Summary statistics" |
 | ❌ M3 | After M1/M2: `gen_fe_config.py`, `books_to_stories.py --check`, docs/07, re-upload math | Me | P1 | 4×3=12 | CLAUDE.md math rule |
 
 ## 5. Art and sound (biggest gap; decides the star rating)
 | Status | Task | Owner | P | Score | Evidence |
 |---|---|---|---|---|---|
-| ❌ | `docs/09-assets.md`: list of every asset the frontend loads (symbols h1–h5, l1–l4, W, S, M, frame, background, big win, free-spin intro, transition, tumble, fonts, audio sprite), sizes, file names, one style guide, AI prompts per asset, Suno prompts | Me | P0 | 5×5=25 | build log lists the asset keys |
+| ❌ | `docs/09-assets.md`: list of every asset the frontend loads (symbols H1–H4, L1–L4 and scatter S — no wild, no M symbol; multiplier-spot states, frame, background, big win, free-spin intro, transition, tumble, fonts, audio sprite), sizes, file names, one style guide, AI prompts per asset, Suno prompts | Me | P0 | 5×5=25 | build log lists the asset keys |
 | ❌ | Generate art (Firefly or Midjourney paid), then a **human paint-over** for a consistent style. No raw generic AI look | You | P0 | 5×5=25 | rankings: "over-reliance on generic AI-generated assets" leads to a low rating |
 | ❌ | Music with Suno Pro/Premier (base loop, bonus loop, big-win and max-win stings); sound effects from stock or ElevenLabs | You | P1 | 4×4=16 | Suno paid plans give a commercial licence |
 | ❌ | `ASSET_LICENSES.md`: tool, plan, date, licence, edits for each asset | Me+You | P1 | 3×4=12 | IP rule: infringement means rejection |

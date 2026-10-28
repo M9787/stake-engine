@@ -28,12 +28,13 @@ None.
 8. **Error codes.** 400: `ERR_VAL`, `ERR_IPB`, `ERR_IS`, `ERR_ATE`, `ERR_GLE`, `ERR_LOC`. 500: `ERR_GEN`, `ERR_MAINTENANCE`.
 9. **Stateless only.** Each bet is independent. No jackpots, gamble features, continuation, or early cash-out. Player choices happen before the spin, as bet modes. Math and modes cannot change after approval.
 10. **Revenue.** 10% of GGR, or a guaranteed 7.5% of expected GGR, chosen per team.
-11. **Approval.** Three reviewers rate 0–3 stars (design, gameplay, math compliance). Average >= 1 star approves. Checklist is login-gated (PROJECT.md §11 Q1).
+11. **Approval.** Three reviewers each rate 0–3 stars in thirds (9 points total). A game needs **≥6/9 points** to publish. A failed review locks the thread for 3 days. The platform was renamed **Engine** (studio.engine.io) in Sep 2026.
+12. **Shelves.** Only **3★ games** enter the New Releases, Slots and Burst Games sections. New Releases are ordered by the team's 30-day Engine Insights rank.
 
 ## Verify
 
 - Each step above maps to a Sources row below.
-- Publishing page content: unverified → PROJECT.md §11 Q1.
+- Rating rules: Sources row `game-quality-rankings` (2026-10-28).
 
 ## Sources
 
@@ -43,5 +44,6 @@ None.
 | https://stake-engine.com/docs/math/math-file-format | step 2 | 2026-09-19 |
 | https://stake-engine.com/docs/approval-guidelines | step 9 | 2026-09-19 |
 | https://stake-engine.com/ | step 10 | 2026-09-19 |
+| https://studio.engine.io/docs/approval-guidelines/game-quality-rankings | steps 11–12: 3 × 0–3★ in thirds, ≥6/9 to publish, 3-day lock, only 3★ on shelves | 2026-10-28 |
 | https://stake-engine.com/docs/approval-guidelines/submission-checklist | step 11 | 2026-09-19 |
 | https://github.com/engineio/ts-client | Engine npm client for RGS calls | 2026-09-19 |

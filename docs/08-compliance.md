@@ -10,31 +10,34 @@ Rules the game must meet before submission. Engine rules come from the approval 
 
 ## Steps (checklist — run before every submission)
 
-Status 2026-09-19: `[x]` verified, `[ ]` open. `(code)` = implemented, not yet verified on screen.
+Status 2026-10-28: `[x]` verified, `[ ]` open. `(code)` = implemented, not yet verified on screen. `[NNN]` = guideline ID in Engine's AI review prompt (`ai-review/prompt.md`); evidence in [ai-review-report.md](ai-review-report.md) Run 2.
 
 ### Math
-- [x] Every mode passes `scripts\math_stats.py`: RTP 0.9635–0.9665, 3-star limits empty, books match lookup.
+- [x] Every mode passes `scripts\math_stats.py`: RTP 0.9635–0.9665, Engine non-critical limits empty (0 failed classes), books match lookup.
 - [x] Every mode has at least one max-win book (reviewer event ID).
 - [ ] Math frozen. No change after approval.
 
 ### Disclosure (UI)
-- [ ] RTP of the game and of each mode shown. (code: `GameInfo.svelte` rules screen)
-- [ ] Max win of each mode shown. (code: rules screen + bet-mode dialogs)
-- [ ] Cost of each mode shown before purchase. (code: rules screen; SDK buy dialog shows price)
-- [ ] Every symbol pay and every multiplier value (x2 … x1024) shown in the paytable. (code: pays from generated `config.ts`)
-- [ ] Bonus trigger rules (3–4 balls = Star, 5+ = Tower) shown. (code)
+- [ ] [25] RTP of the game and of each mode shown. (code: `GameInfo.svelte` rules screen)
+- [ ] [26] Max win of each mode shown. (code: rules screen + bet-mode dialogs)
+- [ ] [27] Cost of each mode shown before purchase. (code: rules screen; SDK buy dialog shows price)
+- [ ] [28] Every symbol pay and every multiplier value (x2 … x1024) shown in the paytable. (code: pays from generated `config.ts`)
+- [ ] [29] Bonus trigger rules (3–4 balls = Star, 5+ = Tower) shown. (code)
 
-- [ ] Button guide: what each button does. (code: `GameInfo.svelte` "Buttons" table)
+- [x] [235] Button guide: what each button does, incl. Stop, Settings, Replay (`GameInfo.svelte` "Buttons" table; AI review Run 2).
+- [x] [185] General disclaimer: Engine template verbatim (`GameInfo.svelte`).
 - [ ] Ante and buy trade-offs stated plainly: ante wins often return less than the spin price; a bonus can pay less than its price. (code: rules screen + bet-mode dialogs)
 
 ### Bets and balance (RGS)
-- [x] Balance shown, formatted per currency. (SDK `LabelBalance`; USD verified in demo, other currencies at M6)
-- [ ] Every bet level from `authenticate` selectable; min and max reachable. (SDK bet menu)
+- [x] [219] Balance and wins formatted per currency: USD EUR CAD MXN JPY XSC XGC (`src/overrides/formatAmount.ts`, `scripts\check_amount.ts` OK; JPY no decimals; SC/GC suffix [78]).
+- [x] [242] Only bet levels from `authenticate`; min and max reachable (interception test 1.00–2.00, Run 2).
+- [x] [222] No play request without balance for the real mode cost; message shown (`game/actor.ts` guard).
 - [x] Starting bet = `defaultBetLevel`; if `betLevels` is missing, levels follow `minBet`..`maxBet` in `stepBet` steps. (our `Authenticate.svelte`; demo starts at $1.00)
-- [ ] Wins at the smallest bet show enough decimals (1.2x of the lowest level). Check on Engine with the real levels.
+- [x] [273] Sub-cent wins keep their digits ($0.004, $0.012 in `check_amount.ts`). Recheck on Engine with the real levels.
 - [ ] RGS errors show a player message, never raw JSON: `ERR_IPB`, `ERR_IS`, `ERR_ATE`, `ERR_GLE`, `ERR_VAL`. (code: our `ModalError.svelte`)
-- [ ] Only `rgs_url` from the query string is called. No other host.
-- [ ] Text does not break when an unsupported `lang` is passed (English fallback).
+- [x] Only `rgs_url` from the query string is called. No other host (`check_external_urls.ps1` exit 0).
+- [x] [274] Invalid `rgs_url` shows "Connection problem. Please reload the game." (Run 2).
+- [x] [240] Unsupported `lang` (`xx`, `en_US`, empty, `zh`) falls back to English, 0 console errors (`vite.patches.js`).
 
 ### Controls
 - [ ] Spacebar places a bet, except when `disabledSpacebar`. (code: our `ui/ButtonBet.svelte`)
@@ -46,7 +49,9 @@ Status 2026-09-19: `[x]` verified, `[ ]` open. `(code)` = implemented, not yet v
 - [x] `disabledSlamstop`: Stop does not skip the round; stopping autoplay still works (`ui/ButtonBet.svelte` guard).
 - [x] `minimumRoundDuration`: each round waits out the minimum before the next (`game/actor.ts` `onPlayGame`); demo with `minround3000` measured 3,000-3,500 ms between rounds, 2026-10-28. Unit open: PROJECT.md Q14.
 - [x] `displaySessionTimer`, `displayNetPosition`, `displayRTP`: `components/JurisdictionHud.svelte` top-left line, hidden unless set; verified in demo 2026-10-28.
-- [ ] Works on mobile and in the mini-player.
+- [x] [223] No pinch or double-tap zoom (`app.html` viewport, `touch-action: manipulation`).
+- [x] [227] Page never scrolls at 1024×576, 400×225, 800×450, 425×812 (scrollHeight = innerHeight, Run 2).
+- [ ] [193][194][195] Works on mobile and in the mini-player: every control usable; mobile WIN label covers the bottom row (fix with the final UI, instruction 19).
 
 ### Win presentation
 - [ ] Win total counts up to the final payout.
@@ -57,22 +62,26 @@ Status 2026-09-19: `[x]` verified, `[ ]` open. `(code)` = implemented, not yet v
 - [ ] No prompts to chase losses or raise the bet after a loss.
 - [ ] No countdowns, streak rewards, or "almost won" messages.
 - [ ] RTP and rules reachable in one tap from the main screen.
-- [ ] No child-like art. Mature theme.
+- [ ] [217] No child-like art. Mature theme.
 
 ### Social casino (URL `social=true` or `jurisdiction.socialCasino`)
-- [x] No restricted term in our text (demo `social=true`: rules screen scanned, 0 hits). The full list (about 40 phrases, e.g. bet, buy, pay, paid, stake, cash, money, credit, currency, fund, purchase, wager, gamble, deposit, withdraw, "cost of", "win feature", "bonus buy") and replacements are in `src/game/wording.ts`, applied by `t()` in the rules screen, bet-mode texts and `ModalError.svelte`.
-- [ ] Shared SDK labels: bet button reads "SPIN" and buy button "PLAY BONUS" when `social=true` (SDK `i18nDerived`). Other shared labels ("BET" amount label, buy dialogs) still use gambling terms → PROJECT.md §11 Q12.
+- [x] [77] No restricted term in our text (demo `social=true`: rules screen scanned, 0 hits). The full list (about 40 phrases, e.g. bet, buy, pay, paid, stake, cash, money, credit, currency, fund, purchase, wager, gamble, deposit, withdraw, "cost of", "win feature", "bonus buy") and replacements are in `src/game/wording.ts`, applied by `t()` in the rules screen, bet-mode texts and `ModalError.svelte`.
+- [x] [77][225] Shared SDK labels use social words too (PLAY, PLAY BONUS, PLAY MENU, SELECT YOUR PLAY), also when social comes from `jurisdiction.socialCasino` (`vite.patches.js` i18n patches; Run 2). Recheck on Engine: PROJECT.md §11 Q12.
 
 ### Replay
-- [ ] (SDK built-in) Query params `replay`, `game`, `version`, `mode`, `event`, `rgs_url` load `GET {rgs_url}/bet/replay/{game}/{version}/{mode}/{event}`. Also honour `amount`, `currency`, `lang`, `social`.
+- [x] [171][172] Query params `replay`, `game`, `version`, `mode`, `event`, `rgs_url` load `GET {rgs_url}/bet/replay/{game}/{version}/{mode}/{event}`; `amount`, `currency`, `lang`, `social` honoured, bad values fall back (Run 2).
 - [ ] Loader while fetching; the round starts from a Play button (SDK loader and "press anywhere" start seen in demo; check against Engine's replay page). A clear message when replay data fails to load: verified ("This replay could not be loaded."). (code: error path in our `Authenticate.svelte`)
-- [x] No authenticated calls in replay (demo: only `GET /bet/replay/...`). Bet cost, payout and win shown.
+- [x] [174] No authenticated calls in replay (demo: only `GET /bet/replay/...`). Real cost and multiplier shown: "TOWER BONUS ×400 · €2.00 · REAL COST €800.00" (`ui/UIReplay.svelte`).
+- [x] [173] Replay can be watched again (REPLAY button, twice in Run 2).
+- [x] [188] No restricted words in replay with `social=true`.
+- [x] [243] Replay fits at 400×225.
 - [ ] Betting disabled in replay. No path from replay to real play except "Play Again".
 
 ### Assets
-- [ ] No web-sdk sample art or Stake branding. (placeholder sample art in use — replace at M6)
+- [x] [275] No Stake Engine loader (removed in instruction 01).
+- [ ] [253] No web-sdk sample art or Stake branding. (placeholder sample art in use — replace at M6, instructions 14–16)
 - [x] No external requests: `scripts\check_external_urls.ps1` exits 0 on the build. (code: Typekit link removed, `webfontloader` aliased to a stub, Inter font bundled under OFL, sample S3/twist-game.app URLs stripped at build)
-- [ ] Original design, no copied IP. Unique audio and visuals.
+- [ ] [217][253] Original design, no copied IP. Unique audio and visuals.
 - [ ] Game tile: `GameTitle-BG` (background) + `GameTitle-FG.png` (transparent foreground) ≤3 MB combined, plus transparent `Provider-Logo.png`; high-res PNG/JPG.
 
 ### Submission
@@ -105,4 +114,5 @@ All boxes checked. Any unchecked box → PROJECT.md §11 row with owner.
 | https://stake-engine.com/docs/approval-guidelines/rgs-communication | bet levels, `minStep`, static files only, `rgs_url`, `lang` fallback | 2026-09-19 |
 | https://stake-engine.com/docs/approval-guidelines/submission-checklist | blurb, finalized game (public part only; full list login-gated) | 2026-09-19 |
 | https://stake-engine.com/docs/rgs/wallet | `disabledTurbo`, `socialCasino`, `disabledFullscreen` | 2026-09-19 |
+| https://studio.engine.io/docs-content/prompt.md | guideline IDs `[NNN]` used by reviewers and the AI review | 2026-10-28 |
 | https://www.gamblingcommission.gov.uk/standards/remote-gambling-and-software-technical-standards/rts-14-responsible-product-design | no celebrating returns ≤ stake, no loss-chasing design | 2026-09-19 |

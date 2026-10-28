@@ -35,7 +35,7 @@ Checklist: math files + frontend build → Engine Studio → published → submi
 ## Review
 
 - Three independent reviewers rate 0–3 stars within 24 hours.
-- Studio approval page: below 2 stars average the game is not published; resubmit within 3 days after fixes. Public checklist says ≥1 star is approved. Plan for ≥2.
+- Three reviewers × 0–3★ in thirds: the game needs ≥6/9 points to publish. A failed review locks the thread for 3 days. Plan for 3★: only 3★ games enter New Releases, Slots and Burst Games ([00](00-platform.md) steps 11–12).
 - First-time publishers: one open review at a time (five once a game is live).
 - After approval the game is live on Stake within 24 hours. Payouts on the 1st of each month to the team wallet.
 
@@ -48,9 +48,10 @@ Checklist: math files + frontend build → Engine Studio → published → submi
 
 | URL | Proves | Checked |
 |---|---|---|
-| https://studio.engine.io/teams/dumalex/games/oracle-of-sevens/approval | readiness checks, 2-star bar, one open review, go-live and payout timing | 2026-09-19 |
+| https://studio.engine.io/teams/dumalex/games/oracle-of-sevens/approval | readiness checks, one open review, go-live and payout timing (its 2-star bar is replaced by the ≥6/9 rule, row below) | 2026-09-19 |
 | https://studio.engine.io/teams/dumalex/payments | payment methods, method lock for new publishers, monthly payouts | 2026-09-19 |
 | https://stake-engine.com/docs/approval-guidelines/game-tile-requirements | tile assets, names, 3 MB limit | 2026-09-19 |
-| https://stake-engine.com/docs/approval-guidelines/submission-checklist | checklist is login-gated; 0–3 stars, ≥1 star approved | 2026-09-19 |
+| https://stake-engine.com/docs/approval-guidelines/submission-checklist | checklist is login-gated | 2026-09-19 |
+| https://studio.engine.io/docs/approval-guidelines/game-quality-rankings | ≥6/9 points to publish, 3-day lock, 3★ shelves | 2026-10-28 |
 | https://github.com/engineio/web-sdk | upload folder layout (`index.html` + `client\`), Import Files, Publish Game | 2026-09-19 |
 | https://stake-engine.com/docs/math/math-file-format | math folder contents | 2026-09-19 |

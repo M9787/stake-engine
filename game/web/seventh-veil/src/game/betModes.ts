@@ -25,7 +25,9 @@ const mode = (
 		title: t(title),
 		dialog: t(dialog),
 		button: type === 'buy' ? t('BUY') : type === 'activate' ? 'ACTIVATE' : '',
-		betAmountLabel: '',
+		// Shared LabelBet falls back to the spin-button text ("SPIN" in social mode); name the
+		// amount itself instead (Engine [77]).
+		betAmountLabel: t('BET'),
 		tickerIdle: '',
 		tickerSpin: '',
 		bannerText: '',

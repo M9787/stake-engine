@@ -33,6 +33,8 @@ export default mergeConfig(config(), {
 			{ find: 'webfontloader', replacement: path.resolve('src/stubs/webfontloader.js') },
 			// Money formatting for all currencies and sub-cent wins (Engine [219], [273], [78]).
 			{ find: /^utils-shared\/amount$/, replacement: path.resolve('src/overrides/amount.ts') },
+			// Our social wording, imported by patched shared i18n files (vite.patches.js).
+			{ find: /^seventh-veil\/wording$/, replacement: path.resolve('src/game/wording.ts') },
 		],
 	},
 	server: https ? { https } : {},

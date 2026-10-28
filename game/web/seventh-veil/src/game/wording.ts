@@ -27,8 +27,11 @@ const SWEEPS: [string, string][] = [
 	['rebet', 'respin'],
 	['money', 'coins'],
 	['stake', 'play amount'],
+	['pay table', 'win table'],
+	['paytable', 'win table'],
 	['payer', 'winner'],
 	['cash', 'coins'],
+	['funds', 'balance'],
 	['fund', 'balance'],
 	['bets', 'plays'],
 	['bet', 'play'],
@@ -54,5 +57,14 @@ export const isSocial = () => stateUrlDerived.social() || !!stateConfig.jurisdic
 export const toSweeps = (text: string) =>
 	text.replace(PATTERN, (hit) => matchCase(hit, LOOKUP.get(hit.toLowerCase().replace('’', "'")) ?? hit));
 
+// Whole labels that read badly after word-by-word replacement (shared SDK texts).
+const SOCIAL_EXACT = new Map<string, string>([
+	[
+		'INSUFFICIENT FUNDS TO PLACE THIS BET. PLEASE ADD FUNDS TO YOUR ACCOUNT OR LOWER THE BET LEVEL.',
+		'NOT ENOUGH BALANCE FOR THIS PLAY. PLEASE LOWER THE PLAY AMOUNT.',
+	],
+]);
+
 /** Player-facing text: unchanged normally, sweeps wording in a social casino. */
-export const t = (text: string) => (isSocial() ? toSweeps(text) : text);
+export const t = (text: string) =>
+	isSocial() ? (SOCIAL_EXACT.get(text) ?? toSweeps(text)) : text;

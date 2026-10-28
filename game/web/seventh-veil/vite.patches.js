@@ -49,6 +49,34 @@ import { stateConfig } from './stateConfig.svelte';`,
 			],
 		],
 	},
+	{
+		// Engine [77][188][225]: shared pixi UI labels (BET, BUY BONUS, PAYTABLE…) go through our
+		// social wording, and social mode also follows jurisdiction.socialCasino, not only ?social=true.
+		file: 'components-ui-pixi/src/i18n/i18nDerived.ts',
+		why: 'social wording for shared pixi labels',
+		edits: [
+			[
+				/import \{ stateI18nDerived, stateUrlDerived \} from 'state-shared';/,
+				`import { stateI18nDerived } from 'state-shared';
+import { t as svT, isSocial as svIsSocial } from 'seventh-veil/wording';`,
+			],
+			[/stateI18nDerived\.translate\(('[^']*')\)/g, 'svT(stateI18nDerived.translate($1))'],
+			[/stateUrlDerived\.social\(\)/g, 'svIsSocial()'],
+		],
+	},
+	{
+		// Engine [77]: shared html UI labels (BET MENU, SELECT YOUR BET, INSUFFICIENT FUNDS…).
+		file: 'components-ui-html/src/i18n/i18nDerived.ts',
+		why: 'social wording for shared html labels',
+		edits: [
+			[
+				/import \{ stateI18nDerived \} from 'state-shared';/,
+				`import { stateI18nDerived } from 'state-shared';
+import { t as svT } from 'seventh-veil/wording';`,
+			],
+			[/stateI18nDerived\.translate\(('[^']*')\)/g, 'svT(stateI18nDerived.translate($1))'],
+		],
+	},
 ];
 
 export const sharedPackagePatches = () => {

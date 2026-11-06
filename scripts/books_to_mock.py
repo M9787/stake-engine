@@ -19,7 +19,7 @@ import zstandard as zstd
 from books_to_stories import G, categorize  # G: the game from --game (default seventh_veil)
 
 PUB = str(G.publish)
-OUT = str(G.sdk_app / ".mock-rgs")
+OUT = str(G.sdk_app / ".mock-rgs" / G.id)  # one folder per game: the core app is shared
 
 
 def arg(name, default):

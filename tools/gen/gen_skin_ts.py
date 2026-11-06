@@ -15,14 +15,58 @@ from gamectx import Game, game_arg  # noqa: E402
 from gen_rules import build as build_rules  # noqa: E402
 
 
+# Board area the core layout reserves for symbols, in px at the 1280x720 design size: 7 x 72 = 504
+# (the Oracle 7x7 fit between title and HUD). Symbol size = this / the larger board side.
+BOARD_AREA_PX = 504
+
+
+def initial_board(g: Game) -> list:
+    """presentation.initialBoard, else the first window of reel strip BR0 (rows + padding per reel)."""
+    gd = g.gdef
+    given = gd.get("presentation", {}).get("initialBoard")
+    if given:
+        return given
+    reels, rows = gd["board"]["reels"], gd["board"]["rows"]
+    pad = 2 if gd["board"].get("includePadding", True) else 0
+    strip_file = g.skin / "math" / "reels" / gd["reels"]["files"]["BR0"]
+    lines = [ln.strip().split(",") for ln in strip_file.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    return [[lines[r % len(lines)][c] for r in range(rows + pad)] for c in range(reels)]
+
+
+MUSIC = {"main": "bgm_main", "feature": "bgm_freespin"}
+
+
+def mode_music(gd: dict) -> dict:
+    """Web mode key (upper case) -> music name. presentation.modes.<name>.music, else 'feature' for
+    spin modes that cost more than 1x and 'main' for everything else."""
+    given = gd.get("presentation", {}).get("modes", {})
+    out = {}
+    for m in gd["modes"]:
+        slot = given.get(m["name"], {}).get("music")
+        if slot is None:
+            slot = "feature" if m["kind"] == "spin" and m["cost"] > 1 else "main"
+        out[m["name"].upper()] = MUSIC[slot]
+    return out
+
+
+def modes_json(gd: dict) -> list:
+    """build/<id>/web/modes.json: what the mock RGS and the e2e suite need (M11 e2e generalisation)."""
+    return [{"name": m["name"], "key": m["name"].upper(), "cost": m["cost"], "kind": m["kind"]} for m in gd["modes"]]
+
+
 def render(g: Game) -> str:
     gd = g.gdef
     rules = build_rules(g, "en")
+    reels, rows = gd["board"]["reels"], gd["board"]["rows"]
     skin = {
         "gameId": g.id,
         "displayName": gd["identity"]["displayName"],
         "version": gd["identity"]["version"],
-        "board": {"reels": gd["board"]["reels"], "rows": gd["board"]["rows"]},
+        "board": {"reels": reels, "rows": rows},
+        "initialBoard": initial_board(g),
+        "highSymbols": [s["id"] for s in gd["symbols"] if s.get("tier") == "high"],
+        "layout": {"symbolSize": BOARD_AREA_PX // max(reels, rows)},
+        "modeMusic": mode_music(gd),
         "symbols": [{k: s[k] for k in ("id", "role", "tier") if k in s} for s in gd["symbols"]],
         "bonusVariants": [v["id"] for v in gd["features"]["bonusVariants"]],
         "gridCap": gd["features"]["gridMultiplier"]["cap"],
@@ -42,7 +86,9 @@ def main():
     out = Path(sys.argv[sys.argv.index("--out") + 1]) if "--out" in sys.argv else g.gen_web / "skin.generated.ts"
     os.makedirs(out.parent, exist_ok=True)
     out.write_text(render(g), encoding="utf-8", newline="\n")
-    print(f"wrote {out}")
+    meta = {"gameId": g.id, "modes": modes_json(g.gdef)}
+    (out.parent / "modes.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8", newline="\n")
+    print(f"wrote {out} + modes.json")
 
 
 if __name__ == "__main__":

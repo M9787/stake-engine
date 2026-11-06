@@ -29,9 +29,11 @@ Always run `powershell -ExecutionPolicy Bypass -File scripts\doctor.ps1` before 
 - No installs or new scaffolding outside the current milestone (PROJECT.md §6).
 - No edits to `web-sdk\packages\*`, `math-sdk\games\0_0_*`, or `web-sdk\apps\cluster`.
 - Math: edit the core in `core\math\cluster_tumble` and game data in `skins\<skin>\` (`game.json`, `math\reels`, `text`), then run `scripts\sync.ps1` (it installs the core and generates one shim per skin in `math-sdk\games\<gameId>`). `game\math\seventh_veil` is the frozen hand-written reference for `tools\golden\compare_config.py`; do not edit it.
-- Web: edit `game\web\seventh-veil` (until M10 moves it to `core\web`), then run `scripts\sync.ps1`. Direct edits in the SDK clones are overwritten by the next sync.
+- Web: edit the one core app `core\web\cluster-tumble` (skin data only through `$skin` → `build\<gameId>\web`), then run `scripts\sync.ps1` (it syncs to `web-sdk\apps\cluster-tumble`). Direct edits in the SDK clones are overwritten by the next sync.
+- Assets: slot catalogue `core\assets\slots.v1.json`; skin style bible and prompts `skins\<skin>\assets.json`; owner files in `skins\<skin>\art_in\{raw,edited}\` (git-ignored).
+- Never run `robocopy /MIR` or `Remove-Item -Recurse` on a `node_modules` folder: pnpm links point into `web-sdk\packages`, and both follow them and delete package files. Delete a whole app folder only with `cmd /c rmdir /s /q`, which does not follow junctions (incident 2026-11-07, restored with `git -C web-sdk checkout -- packages`).
 - Before and after any core or skin math change: `tools\gamedef\validate.py`, `tools\golden\compare_config.py`, `tools\golden\quick_books.py`, `tools\lint_core.py` (PROJECT.md §7).
-- Never hand-edit generated files: `src\game\config.ts` (`gen_fe_config.py`), `src\stories\Mode*` and `src\stories\data\*` (`books_to_stories.py`), `math-sdk\games\<gameId>\game_config.py` and `run.py` (`tools\gen\gen_shim.py`).
+- Never hand-edit generated files: everything under `build\<gameId>\` (`web\config.ts`, `skin.generated.ts`, `assets.generated.ts`, `rules.generated.en.json`, `modes.json`, `static\`, `static-gen\`, `prompts.*`), `skins\<skin>\assets.lock.json` and ingested files (`tools\assets\ingest.py`), `core\web\pnpm-lock.yaml` (mirror written by `sync.ps1`), `src\stories\Mode*` and `src\stories\data\*` (`books_to_stories.py`), `math-sdk\games\<gameId>\game_config.py` and `run.py` (`tools\gen\gen_shim.py`).
 - No new or changed bet modes for Oracle (`skins\oracle-of-sevens`). The set in PROJECT.md §4 is frozen. Factory games freeze at `mathLocked`.
 - No design that breaks docs/08-compliance.md. Those rules are not negotiable.
 - After any math change: rerun `run.py`, then `scripts\math_stats.py`, and update docs/07 results.

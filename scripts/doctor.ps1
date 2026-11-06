@@ -59,6 +59,15 @@ foreach ($dir in @($cfg.MATH_SDK_DIR, $cfg.WEB_SDK_DIR)) {
         'clone SDK (PROJECT.md section 6 M1)' $false
 }
 
+# web-sdk is not tracked here: its lockfile is pinned by the tracked copy core\web\pnpm-lock.yaml (plan v3.3 E3).
+$lock = Join-Path $root 'web-sdk\pnpm-lock.yaml'
+$lockCopy = Join-Path $root 'core\web\pnpm-lock.yaml'
+if ((Test-Path $lock) -and (Test-Path $lockCopy)) {
+    $same = (Get-FileHash $lock).Hash -eq (Get-FileHash $lockCopy).Hash
+    Add-Row 'web lockfile' 'core\web copy' $(if ($same) { 'same' } else { 'differs' }) $same `
+        'after a deliberate install run scripts\sync.ps1; otherwise restore: copy core\web\pnpm-lock.yaml to web-sdk\, then pnpm install --frozen-lockfile' $true
+}
+
 $rows | Format-Table -AutoSize | Out-String -Width 200 | Write-Host
 
 $failed = @($rows | Where-Object { $_.Status -eq 'FAIL' }).Count

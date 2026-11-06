@@ -11,8 +11,14 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { errorText, gameUrl, openGame, sv } from './helpers';
 
-const MOCK_DIR = path.resolve(import.meta.dirname, '../../../web-sdk/apps/seventh-veil/.mock-rgs');
-const MODES = ['base', 'omen', 'prophecy', 'star', 'tower'] as const;
+const MOCK_DIR = path.resolve(import.meta.dirname, '../../../web-sdk/apps', process.env.APP ?? 'cluster-tumble', '.mock-rgs', process.env.GAME ?? 'seventh_veil');
+// Game id and modes from the skin (build/<GAME>/web/modes.json, tools/gen/gen_skin_ts.py).
+const GAME = process.env.GAME ?? 'seventh_veil';
+const SKIN = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, '../../../build', GAME, 'web', 'modes.json'), 'utf-8'));
+const MODES: string[] = SKIN.modes.map((m: { name: string }) => m.name);
+const TEXTS: Record<string, string> = JSON.parse(
+	fs.readFileSync(path.resolve(import.meta.dirname, '../../../build', GAME, 'web', 'rules.generated.en.json'), 'utf-8'),
+).texts;
 // REPLAY_FULL=1 also plays the normal round to the end (about twice the runtime).
 const FULL = !!process.env.REPLAY_FULL;
 const CATEGORIES = ['loss', 'win', 'big', 'bonus', 'maxwin'] as const;
@@ -84,7 +90,7 @@ for (const mode of MODES) {
 			const playResponse = page.waitForResponse((r) => r.url().includes('/rgs/wallet/play'));
 			if (isBuy) {
 				// Buy path as a player takes it: bonus menu -> mode card -> confirm.
-				const title = KEY === 'STAR' ? 'STAR BONUS' : 'TOWER BONUS';
+				const title = TEXTS[`mode.${KEY.toLowerCase()}.title`];
 				await sv(page, "(sv.stateModal.modal = { name: 'buyBonus' }, true)");
 				// The modal markup is rendered twice; the last copy is the one on top.
 				const card = page.locator('.title', { hasText: title }).last().locator('xpath=ancestor::*[.//button][1]');
@@ -109,7 +115,7 @@ for (const mode of MODES) {
 			const replay = watchErrors(page);
 			const replayResponse = page.waitForResponse((r) => r.url().includes('/rgs/bet/replay/'));
 			const replayUrl =
-				`/?replay=true&game=seventh_veil&version=1&mode=${KEY}&event=${round.roundID}` +
+				`/?replay=true&game=${SKIN.gameId}&version=1&mode=${KEY}&event=${round.roundID}` +
 				`&rgs_url=localhost:3007/rgs&amount=${round.amount}&currency=USD&lang=en`;
 			await page.goto(replayUrl);
 			const data = await (await replayResponse).json();

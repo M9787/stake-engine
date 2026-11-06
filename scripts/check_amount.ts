@@ -4,7 +4,7 @@
 // Usage: node --experimental-strip-types scripts\check_amount.ts
 // Exit code: 0 = all good, 1 = at least one wrong value.
 
-import { CURRENCY_META, formatAmount } from '../game/web/seventh-veil/src/overrides/formatAmount.ts';
+import { CURRENCY_META, formatAmount } from '../core/web/cluster-tumble/src/overrides/formatAmount.ts';
 
 // Engine "Example" column for 10 units, one row per currency (en locale, no grouping at 10).
 const ENGINE_EXAMPLES: Record<string, string> = {

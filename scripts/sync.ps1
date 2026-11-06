@@ -1,17 +1,19 @@
-﻿# sync.ps1 - copy the source of truth into the SDK clones.
+# sync.ps1 - copy the source of truth into the SDK clones.
 # Math (since M8, 2026-11-06): core\math\cluster_tumble + one generated shim per skins\*\game.json
 # (tools\gen\gen_shim.py). game\math\seventh_veil is the hand-written reference, no longer synced.
-# Web: game\web\seventh-veil (until M10 moves it to core\web).
-# One direction only: edit in stake\game\, then run this. Generated output
-# (math library\, web node_modules\, .svelte-kit\, .mock-rgs\) in the clones is never touched.
-# static\ (images, fonts, audio) is mirrored like source since 2026-10-28 (instruction 13).
-# Usage: powershell -ExecutionPolicy Bypass -File scripts\sync.ps1 [-WhatIf]
+# Web (since M10 slice 10.2b, 2026-11-07): ONE core app core\web\cluster-tumble -> web-sdk\apps\cluster-tumble.
+# The skin comes in through the $skin alias (build\<gameId>\web), never through app code.
+# One direction only: edit in stake\core\ or stake\skins\, then run this. Generated output
+# (math library\, web node_modules\, .svelte-kit\, .mock-rgs\, build\) in the clones is never touched.
+# Lockfile: web-sdk is not tracked here, so web-sdk\pnpm-lock.yaml is mirrored back to the tracked
+# core\web\pnpm-lock.yaml after every sync (plan v3.3 E3). Order for any install: pnpm install -> sync -> doctor.
+# Usage: powershell -ExecutionPolicy Bypass -File scripts\sync.ps1 [-Game <gameId>] [-WhatIf]
 
-param([switch]$WhatIf)
+param([string]$Game = '', [switch]$WhatIf)
 
 $root = Split-Path -Parent $PSScriptRoot
 $pairs = @(
-    @{ Src = 'game\web\seventh-veil';  Dst = 'web-sdk\apps\seventh-veil';   Skip = @('node_modules', '.svelte-kit', '.turbo', '.mock-rgs') }
+    @{ Src = 'core\web\cluster-tumble'; Dst = 'web-sdk\apps\cluster-tumble'; Skip = @('node_modules', '.svelte-kit', '.turbo', '.mock-rgs', 'build') }
 )
 
 $failed = 0
@@ -26,14 +28,28 @@ foreach ($p in $pairs) {
     if ($LASTEXITCODE -ge 8) { Write-Host "FAIL  $($p.Src) -> $($p.Dst) (robocopy $LASTEXITCODE)"; $failed++ }
     else { Write-Host "ok    $($p.Src) -> $($p.Dst)" }
 }
+$lock = Join-Path $root 'web-sdk\pnpm-lock.yaml'
+$lockCopy = Join-Path $root 'core\web\pnpm-lock.yaml'
+if (-not $WhatIf -and (Test-Path $lock)) {
+    Copy-Item $lock $lockCopy -Force
+    Write-Host "ok    web-sdk\pnpm-lock.yaml -> core\web\pnpm-lock.yaml (tracked copy)"
+}
 $py = Join-Path $root 'math-sdk\env\Scripts\python.exe'
 if ($WhatIf) { Write-Host "skip  math core + shims (-WhatIf)" }
 else {
-    & $py (Join-Path $root 'tools\gen\gen_shim.py')
+    $shimArgs = @((Join-Path $root 'tools\gen\gen_shim.py'))
+    if ($Game) { $shimArgs += @('--game', $Game) }
+    & $py @shimArgs
     if ($LASTEXITCODE -ne 0) { Write-Host "FAIL  tools\gen\gen_shim.py"; $failed++ }
     # Skin data for the web app ($skin -> build\<gameId>\web, M10). Needs the game's math output.
     foreach ($g in Get-ChildItem (Join-Path $root 'skins\*\game.json')) {
         $id = (Get-Content $g.FullName -Raw | ConvertFrom-Json).identity.gameId
+        if ($Game -and $id -ne $Game) { continue }
+        $vpy = Join-Path $root '.venv-assets\Scripts\python.exe'
+        if (Test-Path $vpy) { & $vpy (Join-Path $root 'tools\assets\audio.py') --game $id | Out-Null; if ($LASTEXITCODE -ne 0) { Write-Host "FAIL  tools\assets\audio.py --game $id"; $failed++ } }
+        & $py (Join-Path $root 'tools\gen\gen_web_static.py') --game $id
+        & $py (Join-Path $root 'tools\gen\gen_assets_ts.py') --game $id | Out-Null
+        if ($LASTEXITCODE -ne 0) { Write-Host "FAIL  tools\gen\gen_web_static.py --game $id"; $failed++ }
         if (-not (Test-Path (Join-Path $root "math-sdk\games\$id\library\configs\config_fe_$id.json"))) {
             Write-Host "skip  skin data $id (no math output yet: build the math first)"; continue
         }

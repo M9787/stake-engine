@@ -24,6 +24,7 @@
         "workingName": { "type": "string", "minLength": 2, "maxLength": 60 },
         "providerName": { "type": "string", "pattern": "^[a-z0-9_]+$" },
         "providerNumber": { "type": "integer", "minimum": 0 },
+        "testOnly": { "type": "boolean", "description": "Test skin: built and gated like a real game, but tools/package.ps1 always refuses it." },
         "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }
       }
     },
@@ -110,7 +111,8 @@
       }
     },
     "reelWeights": {
-      "type": "object", "additionalProperties": false, "required": ["fg", "cap", "baseOnly"], "x-frozen": "math",
+      "type": "object", "additionalProperties": false, "required": ["fg"], "x-frozen": "math",
+      "description": "Reel-strip weights per outcome type. cap (forced max-win books) and baseOnly (no-bonus books) default to fg.",
       "properties": {
         "fg": { "$ref": "#/$defs/reelWeightSet" },
         "cap": { "$ref": "#/$defs/reelWeightSet" },
@@ -188,7 +190,35 @@
           }
         },
         "fontGradient": { "type": "array", "minItems": 2, "maxItems": 4, "items": { "$ref": "#/$defs/hexColor" }, "description": "Win-number colours, top to bottom." },
-        "fontStroke": { "$ref": "#/$defs/hexColor", "description": "Outline colour of win numbers." }
+        "fontStroke": { "$ref": "#/$defs/hexColor", "description": "Outline colour of win numbers." },
+        "ui": {
+          "type": "object", "additionalProperties": false,
+          "description": "Colours of the HTML panels (game info, rules). The core uses neutral defaults when a value is missing.",
+          "properties": {
+            "text": { "$ref": "#/$defs/cssColor", "description": "Body text." },
+            "heading": { "$ref": "#/$defs/cssColor", "description": "Headings." },
+            "rule": { "$ref": "#/$defs/cssColor", "description": "Table lines; #RRGGBBAA for transparency." }
+          }
+        }
+      }
+    },
+    "presentation": {
+      "type": "object", "additionalProperties": false,
+      "description": "How the game looks and moves (M10, plan v3.3). Visual only: never changes the math.",
+      "properties": {
+        "initialBoard": {
+          "type": "array", "minItems": 5, "maxItems": 8,
+          "description": "Board shown before the first spin: one array per reel, top to bottom, including one padding symbol above and below when board.includePadding. Must not show a win or a bonus trigger (no fake near-miss). Default: the first window of reel strip BR0.",
+          "items": { "type": "array", "minItems": 5, "maxItems": 10, "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9]{0,3}$" } }
+        },
+        "modes": {
+          "type": "object",
+          "description": "Per-mode presentation, keyed by mode name. Default music: 'feature' for spin modes that cost more than 1x, else 'main'.",
+          "additionalProperties": {
+            "type": "object", "additionalProperties": false,
+            "properties": { "music": { "enum": ["main", "feature"], "description": "Background music while this mode is selected." } }
+          }
+        }
       }
     },
     "review": {
@@ -202,6 +232,7 @@
   },
   "$defs": {
     "hexColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "description": "Colour as #RRGGBB." },
+    "cssColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$", "description": "Colour as #RRGGBB or #RRGGBBAA." },
     "countMap": {
       "type": "object", "propertyNames": { "pattern": "^[0-9]+$" },
       "additionalProperties": { "type": "integer", "minimum": 0 }
@@ -226,7 +257,18 @@
         "basegameRtp": { "type": "number", "minimum": 0, "maximum": 1 },
         "hitOneIn": { "type": "number", "minimum": 1.5, "maximum": 50, "description": "A winning spin about 1 in N (Engine guidance: at least 1 in 50)." },
         "midWinLift": { "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }], "items": false, "minItems": 2 },
-        "baseScaling": { "type": "array", "items": { "$ref": "#/$defs/scaleRule" } }
+        "baseScaling": { "type": "array", "items": { "$ref": "#/$defs/scaleRule" } },
+        "midWinRanges": {
+          "type": "array", "minItems": 2, "maxItems": 2, "x-unit": "x bet",
+          "items": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0 }, { "type": "number", "minimum": 0 }], "items": false, "minItems": 2 },
+          "description": "Optional: the two win ranges midWinLift applies to. Default: 500-1000 and 1000-5000 when max win >= 20000, else scaled to the max win (0.1-0.2 and 0.2-0.5 of it)."
+        },
+        "highDamp": {
+          "type": "array", "minItems": 2, "maxItems": 2,
+          "prefixItems": [{ "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }], "items": false, "minItems": 2 }, { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }],
+          "items": false,
+          "description": "Optional: [[from, to], factor] damping very high bonus wins. Default: [[5000, 20000], 0.8] or scaled to the max win."
+        }
       }
     },
     "buyTarget": {

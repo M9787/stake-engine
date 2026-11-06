@@ -1,6 +1,7 @@
 r"""Fail when the core holds skin literals (docs/10 section 2 "Enforcement").
 
-Usage:  math-sdk\env\Scripts\python.exe tools\lint_core.py
+Usage:  math-sdk\env\Scripts\python.exe tools\lint_core.py [--scope math|web|all]
+        math = core\math, core\schema, core\assets (gate until M10 slice 10.5); web = core\web; all = everything (default)
 Exit:   0 = clean, 1 = skin literals found.
 
 Skin words come from every skins/*/game.json (game id, display name, mode names, bonus variant ids,
@@ -38,19 +39,46 @@ def skin_words():
     return sorted(w.lower() for w in words if w.lower() not in ALLOW)
 
 
+# Generated or sample files that still sit inside the core app, with the slice that removes them.
+TEMP_EXCLUDE = {
+    "web/cluster-tumble/src/stories": "M10 slice 10.7 moves generated stories to src/stories/generated (ignored)",
+}
+ALLOW_MARK = "lint-core: allow"
+
+SCOPES = {
+    "math": ["math", "schema", "assets"],
+    "web": ["web"],
+}
+
+
+def scan_roots(argv):
+    scope = argv[argv.index("--scope") + 1] if "--scope" in argv else "all"
+    if scope == "all":
+        return scope, [CORE]
+    if scope not in SCOPES:
+        sys.exit(f"unknown --scope {scope}; use math, web or all")
+    return scope, [CORE / d for d in SCOPES[scope] if (CORE / d).exists()]
+
+
 def main():
+    scope, roots = scan_roots(sys.argv)
     words = skin_words()
     pattern = re.compile(r"\b(" + "|".join(map(re.escape, words)) + r")\b", re.I)
     hits = []
-    for path in sorted(CORE.rglob("*")):
+    for path in sorted(p for r in roots for p in r.rglob("*")):
         if path.suffix not in SCAN_SUFFIXES or "__pycache__" in path.parts or "node_modules" in path.parts:
             continue
+        rel = path.relative_to(CORE).as_posix()
+        if any(rel.startswith(prefix + "/") for prefix in TEMP_EXCLUDE):
+            continue
         for n, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            if ALLOW_MARK in line:
+                continue
             for m in pattern.finditer(line):
                 hits.append(f"{path.relative_to(ROOT)}:{n}: '{m.group(0)}'  {line.strip()[:90]}")
     for h in hits:
         print(h)
-    print(f"{'FAIL' if hits else 'OK'}: {len(hits)} skin literal(s) in core/ ({len(words)} skin words checked)")
+    print(f"{'FAIL' if hits else 'OK'}: {len(hits)} skin literal(s) in core/ (scope {scope}, {len(words)} skin words checked)")
     sys.exit(1 if hits else 0)
 
 

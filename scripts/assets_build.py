@@ -31,9 +31,9 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STATIC = os.path.join(ROOT, "game", "web", "seventh-veil", "static")
+STATIC = os.path.join(ROOT, "core", "web", "cluster-tumble", "static-legacy")
 SOUNDS_JSON = os.path.join(STATIC, "assets", "audio", "sounds.json")
-FONT_DIR = os.path.join(ROOT, "game", "web", "seventh-veil", "fontsrc")
+FONT_DIR = os.path.join(ROOT, "core", "web", "cluster-tumble", "fontsrc")
 
 # docs/09 section 1. The palette pull moves hue and saturation toward the nearest of these.
 PALETTE = {

@@ -1,15 +1,16 @@
 r"""One place that maps a game id to its files (docs/10 section 1). Every tool takes --game <gameId>.
 
     from gamectx import Game, game_arg
-    g = Game(game_arg())          # default: the only game with a legacy web app (seventh_veil)
+    g = Game(game_arg())          # default: seventh_veil (Oracle of Sevens)
 
 Paths:
     skin        skins/<skin>/                       game.json, text/, math/reels, math/lookups
     library     math-sdk/games/<id>/library/        math output (books, lookups, configs)
     fe_config   library/configs/config_fe_<id>.json
     gen_web     build/<id>/web/                     generated web data for the $skin alias (M10)
-    web_src     game/web/<app>/src  (legacy per-game app, until M10 moves the web to core/web)
-    sdk_app     web-sdk/apps/<app>/                 synced copy the dev server and builds run from
+    web_src     core/web/cluster-tumble/src         only for games whose generated config.ts and stories
+                                                    still live inside the core app (until M10 slices 10.4/10.7)
+    sdk_app     web-sdk/apps/cluster-tumble/        synced copy the dev server and builds run from (one app)
 """
 
 import json
@@ -18,9 +19,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_GAME = "seventh_veil"
-# Games that still have a hand-made web app folder (game/web/<app>). Factory games use the core app.
-LEGACY_WEB_APPS = {"seventh_veil": "seventh-veil"}
+# One core web app for every game (M10 slice 10.2b). Games listed here still keep their generated
+# config.ts and stories inside the core app's src (removed by slices 10.4/10.7).
 CORE_WEB_APP = "cluster-tumble"
+CORE_WEB = ROOT / "core" / "web" / CORE_WEB_APP
+GENERATED_IN_APP = {"seventh_veil"}
 
 
 def game_arg(argv=None, default=DEFAULT_GAME):
@@ -51,14 +54,13 @@ class Game:
         self.publish = self.library / "publish_files"
         self.fe_config = self.library / "configs" / f"config_fe_{game_id}.json"
         self.gen_web = ROOT / "build" / game_id / "web"
-        app = LEGACY_WEB_APPS.get(game_id)
-        self.web_src = ROOT / "game" / "web" / app / "src" if app else None
-        self.sdk_app = ROOT / "web-sdk" / "apps" / (app or CORE_WEB_APP)
+        self.web_src = CORE_WEB / "src" if game_id in GENERATED_IN_APP else None
+        self.sdk_app = ROOT / "web-sdk" / "apps" / CORE_WEB_APP
 
     @property
     def config_ts(self) -> Path:
-        """Where config.ts goes: the legacy app's src/game, else the $skin folder."""
-        return self.web_src / "game" / "config.ts" if self.web_src else self.gen_web / "config.ts"
+        """Where config.ts goes: the $skin folder (imported as $skin/config since M10 slice 10.5)."""
+        return self.gen_web / "config.ts"
 
     def text(self, lang: str = "en") -> dict:
         path = self.skin / "text" / f"{lang}.json"

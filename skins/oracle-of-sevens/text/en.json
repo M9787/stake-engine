@@ -33,5 +33,11 @@
   "rules.bonuses.title": "Bonuses",
   "rules.bonuses": "Star Bonus: {variant.star.spinsMin} free spins ({variant.star.scatterMin} Crystal Balls) or {variant.star.spinsMax} ({variant.star.scatterMax} Crystal Balls), starting with {variant.star.prechargeSpots} spots already charged at x{variant.star.prechargeValue}. Tower Bonus: {variant.tower.spinsMin}-{variant.tower.spinsMax} free spins, starting with {variant.tower.prechargeSpots} spots already charged at x{variant.tower.prechargeValue}. In both bonuses the grid persists for the whole bonus. {retrigger.min} or more Crystal Balls during a bonus add {retrigger.spins} spins.",
   "button.buyBonus": "Opens the Fate modes (Omen, Prophecy) and the Star and Tower bonus buys, with price, RTP and max win.",
-  "rules.modes": "Fate: Omen and Fate: Prophecy raise the price of each spin in exchange for more frequent bonuses. In Fate: Omen nearly every win pays more than the spin price. In Fate: Prophecy many wins return less than the spin price; its value comes mostly from the bonuses. RTP is the same in every mode."
+  "rules.modes": "Fate: Omen and Fate: Prophecy raise the price of each spin in exchange for more frequent bonuses. In Fate: Omen nearly every win pays more than the spin price. In Fate: Prophecy many wins return less than the spin price; its value comes mostly from the bonuses. RTP is the same in every mode.",
+  "winlevel.big": "BIG WIN",
+  "winlevel.superwin": "SUPER WIN",
+  "winlevel.mega": "MEGA WIN",
+  "winlevel.epic": "EPIC WIN!",
+  "winlevel.max": "MAX WIN",
+  "winlevel.max.signature": "THE VEIL TEARS"
 }

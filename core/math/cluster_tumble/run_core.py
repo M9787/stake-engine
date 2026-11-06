@@ -9,6 +9,8 @@ Environment switches (CT_*; the older SV_* names still work):
   CT_REUSE_WEIGHTS=<dir> copy frozen lookUpTable_<mode>_0.csv from <dir> into publish_files before
                         configs are written (the optimizer is not deterministic: weights are frozen)
   CT_MODES=a,b          limit the optimizer to some modes
+  CT_TIER=preview       10,000 sims per mode and a lighter optimizer: a quick estimate for tuning, never
+                        publishable (run_meta.json tier = preview; tools/assets/precheck.py refuses it)
 """
 
 import json
@@ -25,6 +27,9 @@ from src.write_data.write_configs import generate_configs
 from utils.rgs_verification import execute_all_tests
 
 
+PREVIEW_SIMS = 10_000
+
+
 def env(name: str):
     return os.environ.get(f"CT_{name}", os.environ.get(f"SV_{name}"))
 
@@ -39,6 +44,9 @@ def main(game_id: str, game_config_class):
     compression = True
     profiling = False
     num_sim_args = {m["name"]: int(gdef["math"]["sims"][m["name"]]) for m in gdef["modes"]}
+    tier = env("TIER") or "candidate"
+    if tier == "preview":
+        num_sim_args = {name: PREVIEW_SIMS for name in num_sim_args}
 
     reuse_weights = env("REUSE_WEIGHTS")
     run_conditions = {
@@ -66,6 +74,7 @@ def main(game_id: str, game_config_class):
                     "num_threads": num_threads,
                     "batching_size": batching_size,
                     "num_sim_args": num_sim_args,
+                    "tier": tier,
                 },
                 f,
                 indent=2,
@@ -73,7 +82,7 @@ def main(game_id: str, game_config_class):
     if run_conditions["run_optimization"]:
         from optimization_program.run_script import OptimizationExecution
 
-        OptimizationSetup(config)
+        OptimizationSetup(config, preview=(tier == "preview"))
 
     if run_conditions["run_sims"]:
         create_books(gamestate, config, num_sim_args, batching_size, num_threads, compression, profiling)

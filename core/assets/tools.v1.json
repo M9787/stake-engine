@@ -1,0 +1,41 @@
+{
+  "_comment": "Generator profiles shown on each asset card (docs/10 plan v3.3). Licence ids must be on the precheck allowlist in slots.v1.json.",
+  "schemaVersion": 1,
+  "tools": {
+    "midjourney": {
+      "label": "Midjourney (Pro, Stealth on)",
+      "url": "https://www.midjourney.com/imagine",
+      "steps": ["Paste the prompt", "Make 4 images, pick 1", "Upscale (Subtle)", "Download PNG", "Save as art_in/raw/<slot>.png", "Edit in Photopea, export PNG as art_in/edited/<slot>.png"],
+      "licence": "midjourney-pro",
+      "humanEdit": "required"
+    },
+    "suno": {
+      "label": "Suno (Pro or Premier, Instrumental on)",
+      "url": "https://suno.com/create",
+      "steps": ["Instrumental on, current model", "Paste the prompt", "Download WAV (else MP3)", "Save as art_in/raw/<slot>.wav"],
+      "licence": "suno-pro",
+      "humanEdit": "optional",
+      "monthlyDownloads": 20
+    },
+    "cc0": {
+      "label": "CC0 library (Kenney, Freesound with the CC0 filter)",
+      "url": "https://freesound.org/search/?f=license:%22Creative+Commons+0%22",
+      "steps": ["Search the term shown", "Check the licence is CC0", "Download WAV", "Save as art_in/raw/<slot>.wav", "Copy the sound page URL into the provenance line"],
+      "licence": "cc0",
+      "humanEdit": "optional"
+    },
+    "elevenlabs": {
+      "label": "ElevenLabs sound effects (blocked until PROJECT.md Q16 closes)",
+      "blocked": "Q16",
+      "licence": "elevenlabs",
+      "humanEdit": "optional"
+    },
+    "google-fonts-ofl": {
+      "label": "Google Fonts (SIL Open Font License only)",
+      "url": "https://fonts.google.com/?license=ofl",
+      "steps": ["Pick a font under the OFL licence", "Download the family", "Save the regular TTF as art_in/raw/<slot>.ttf"],
+      "licence": "ofl",
+      "humanEdit": "none"
+    }
+  }
+}

@@ -92,7 +92,19 @@
     "palettePull": 0.35,
     "glow": { "color": "#D4A845", "radius": 6, "strength": 0.55 },
     "fontGradient": ["#F6E3A1", "#D4A845", "#8A6420"],
-    "fontStroke": "#2A1A08"
+    "fontStroke": "#2A1A08",
+    "ui": { "text": "#F3E9FF", "heading": "#E7C77A", "rule": "#E7C77A4D" }
+  },
+  "presentation": {
+    "initialBoard": [
+      ["L1", "H1", "L1", "L2", "L2", "L3", "L2", "L3", "H3"],
+      ["L2", "L2", "L3", "L2", "L2", "L3", "L2", "L2", "H2"],
+      ["L3", "H3", "L1", "L1", "H4", "L2", "H4", "H4", "H2"],
+      ["H4", "L1", "H2", "H2", "H4", "H2", "H2", "L3", "L3"],
+      ["L1", "L1", "H3", "H1", "H1", "L2", "L2", "L3", "L3"],
+      ["L1", "L2", "L2", "H1", "H4", "H4", "H2", "H3", "H2"],
+      ["L3", "L3", "L3", "H3", "H1", "L3", "H3", "H3", "H2"]
+    ]
   },
   "review": {
     "signatureMoment": "Veil tear: the charged grid doubles spots up to x1024 and persists through the whole bonus.",

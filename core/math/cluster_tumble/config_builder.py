@@ -145,6 +145,10 @@ def build(game_id: str, module: str | None = None):
                 key: {self.basegame_type if k == "basegame" else self.freegame_type: v for k, v in rw.items()}
                 for key, rw in gdef["reelWeights"].items()
             }
+            # cap (forced max-win books) and baseOnly (no-bonus books) default to the bonus weights fg
+            # (plan v3.3 M11.3): a small skin may give one weight set only.
+            weights.setdefault("cap", weights["fg"])
+            weights.setdefault("baseOnly", weights["fg"])
             self.bet_modes = [self._bet_mode(m, weights) for m in gdef["modes"]]
 
         def _bet_mode(self, m: dict, weights: dict) -> BetMode:

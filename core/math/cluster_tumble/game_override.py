@@ -3,6 +3,10 @@ import random
 from games.core_cluster_tumble.game_executables import GameExecutables
 from games.core_cluster_tumble.game_events import update_grid_mult_event, bonus_variant_event
 
+# Abort a book after this many failed attempts in a row (hang guard, plan v3.3 C2). Skin #1's rarest
+# criterion (wincap) needs far fewer; a skin that hits this has an unreachable target.
+MAX_ATTEMPTS_PER_BOOK = 200_000
+
 
 class GameStateOverride(GameExecutables):
     """Core overrides of universal state functions (cluster_tumble).
@@ -66,3 +70,16 @@ class GameStateOverride(GameExecutables):
             floor = self.config.buy_floor.get(self.betmode)
             if floor is not None and self.criteria == "freegame" and self.final_win < floor:
                 self.repeat = True
+
+        # Hang guard (plan v3.3 C2): a criterion the board can hardly reach would loop for hours.
+        # Counting attempts makes no RNG call, so books are unchanged.
+        if self.repeat:
+            self.ct_attempts = getattr(self, "ct_attempts", 0) + 1
+            if self.ct_attempts > MAX_ATTEMPTS_PER_BOOK:
+                raise RuntimeError(
+                    f"Mode '{self.betmode}', outcome '{self.criteria}': no valid book after {MAX_ATTEMPTS_PER_BOOK:,} "
+                    "attempts. The target is (nearly) unreachable on this board: lower the max win, raise its "
+                    "quota, or change the reel strips."
+                )
+        else:
+            self.ct_attempts = 0

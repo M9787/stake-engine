@@ -7,7 +7,7 @@ Brief: [docs/_original-brief.txt](docs/_original-brief.txt), [game_description](
 
 Ship **Oracle of Sevens** to Stake Engine: a mystic-tarot 7x7 cluster-tumble slot with a charged multiplier grid, 5 frozen bet modes, and a 77,777x max win.
 Player-visible name is Oracle of Sevens (Studio: team `dumalex`, game `oracle-of-sevens` on studio.engine.io). Internal ids keep the working name `seventh_veil` / `seventh-veil`.
-Our code lives in `game\math\seventh_veil` and `game\web\seventh-veil` (tracked here). `scripts\sync.ps1` copies it into the SDK clones, where it builds and runs.
+Our code lives in `core\` (one math core, one web app) and game data in `skins\<skin>\` (tracked here). `scripts\sync.ps1` copies the core into the SDK clones and generates one shim and one `build\<gameId>\web` data folder per skin.
 
 DONE test: game approved on Engine (≥6/9 review points) and live; target 3★, because only 3★ games enter New Releases, Slots and Burst Games ([docs/00](docs/00-platform.md) steps 11–12).
 
@@ -30,11 +30,13 @@ DONE test: a task that conflicts with this list is rejected.
 | Python | 3.12.9 | math-sdk needs >=3.12 |
 | Rust/Cargo | 1.98.1 stable, `x86_64-pc-windows-gnu` override in `math-sdk\optimization_program` | math-sdk optimizer; GNU target avoids the multi-GB MSVC Build Tools install |
 | Svelte / PixiJS / TurboRepo | 5 / 8 / from lockfile | web-sdk |
+| pixi.js (direct dep of the core app) | 8.8.1, same version pixi-svelte locks; added 2026-11-07 | runtime bitmap fonts from the skin font (`src\slots\fonts.ts`, plan v3.3 10.6b); no new download |
 | web-sdk clone | `1843d60cedb94b390e641b563f32ad64353bec5e` | SDK pin; upgrade only on a branch + full golden gate (docs/10) |
 | math-sdk clone | `307e6812b38489e212f835001f21e9f7d4c18a4d` | SDK pin; same rule |
 | @playwright/test | 1.65.0 (own `tools\e2e\package.json` + lockfile, pnpm) | e2e gate: book replay, errors, maxBet, resume, social, screenshots (docs/10 M6c/M6e) |
 | jsonschema (Python) | 4.26.0 in `math-sdk\env` | game-definition validation (`tools\gamedef\validate.py`, docs/10 M7) |
 | Math run pins | `PYTHONHASHSEED=0`, zstandard 0.23.0, 10 threads, batching 50,000 | reproducible books (docs/07 Determinism) |
+| Asset pipeline (`.venv-assets`) | Pillow 13.0.0, numpy 2.5.4, rembg 2.0.86, onnxruntime 1.31.1; ffmpeg 8.1.1 full_build (gyan.dev, winget) | byte-stable ingest, contact sheet, audio (docs/10 v3.3 slice 0); recorded as found 2026-11-07, no install |
 
 DONE test: `scripts\doctor.ps1` exits 0 (Node, pnpm, Python required; Rust version shown as WARN if different).
 
@@ -55,7 +57,11 @@ Max win 77,777x in every mode. Every base pay is at least 1.2x. Base hits 25% of
 ```
 stake/
 ├─ PROJECT.md, CLAUDE.md, .env.example
-├─ game/        math\seventh_veil, web\seventh-veil — our code; edit here only
+├─ core/        math\cluster_tumble · web\cluster-tumble (one app) · schema\ · assets\ (slot catalogue) — edit here
+├─ skins/       <skin>\game.json, text\, math\{reels,lookups}, assets.json, art_in\ (ignored) — data only
+├─ tools/       gamedef · gen · golden · assets · e2e · web_build.ps1 (all take --game / -Game)
+├─ build/       generated per game (ignored): web\ ($skin target), dist\, prompts.html, contact sheets
+├─ game/        math\seventh_veil — frozen hand-written math reference for tools\golden (do not edit)
 ├─ scripts/     doctor.ps1 · sync.ps1 · math_stats.py · gen_fe_config.py · books_to_stories.py
 │             books_to_mock.py · dev_cert.ps1 · check_external_urls.ps1
 ├─ docs/        00 platform · 01 math · 02 web · 03 contract · 04 practice · 05 publish
@@ -87,6 +93,8 @@ Open work, scored and prioritized: [TODO.md](TODO.md).
 | M7–M11 | Core extraction (Phase B) | Oracle rebuilt from `core\` + `skins\oracle-of-sevens` with identical books and config; `gate.ps1 -Game seventh_veil` and `-Game zz_smoke` exit 0 | M7 done 2026-11-06: schema `core\schema\game-definition.v1.schema.json`; `skins\oracle-of-sevens\game.json` + `text\en.json`; `validate.py` 0 errors (11 broken cases caught); `compare_config.py` IDENTICAL (config + optimizer setup + reshape). M8 done 2026-11-07: core in `core\math\cluster_tumble`, shims via `sync.ps1`; `quick_books.py` 320/320 identical; full shim run with frozen weights gives `snapshot.py --verify` IDENTICAL (40 files) against `golden.lock.json` and byte-identical `math_stats --json` (docs/07 "Core rebuild"). M9 done 2026-11-06 except the M10-dependent part: every generator takes `--game` (`tools\gamedef\gamectx.py` maps id to paths); `gen_rules.py` + `gen_skin_ts.py` write `build\<id>\web\`; `check_generated.py` 5/5 current; config.ts, stories and mock byte-identical; `game.json theme` drives `assets_build.py` |
 | M12–M17 | Factory editor (Phase C) | a non-developer builds `zz_smoke` in under 2 h; game #2 passes all gates and is submitted | |
 
+Plan v3.3 (2026-11-07, docs/10 end section) re-sequences: Slice 0 (asset catalogue + prompts) → M10 rest → M11 → M6d (CLI ingest) → M6e → M6f submit → M12–M17 during Oracle's review.
+
 Plan for M6a–M17: [docs/10-factory-plan.md](docs/10-factory-plan.md) — Phase A (Oracle state of the art), B (core + skins), C (factory editor). Cadence after M17: 1 game per 2 weeks for 8 weeks, then weekly.
 
 ## 7. Commands
@@ -106,6 +114,10 @@ Run from `stake\` in PowerShell.
 | Retune optimizer only (reuse books) | `$env:SV_SKIP_SIMS='1'; $env:SV_MODES='star'; Push-Location math-sdk; .\env\Scripts\python.exe games\seventh_veil\run.py; Pop-Location; Remove-Item Env:SV_SKIP_SIMS, Env:SV_MODES` |
 | Build math, sims only (no optimizer) | `$env:PYTHONHASHSEED='0'; $env:SV_SKIP_OPT='1'; Push-Location math-sdk; .\env\Scripts\python.exe games\seventh_veil\run.py; Pop-Location; Remove-Item Env:PYTHONHASHSEED, Env:SV_SKIP_OPT` |
 | Build math with frozen weights | `$env:PYTHONHASHSEED='0'; $env:SV_REUSE_WEIGHTS="$PWD\skins\oracle-of-sevens\math\lookups"; Push-Location math-sdk; .\env\Scripts\python.exe games\seventh_veil\run.py; Pop-Location; Remove-Item Env:PYTHONHASHSEED, Env:SV_REUSE_WEIGHTS` |
+| Asset prompts (owner sheet) | `math-sdk\env\Scripts\python.exe tools\assets\prompts.py --game <id>` → `build\<id>\prompts.html` + `prompts.json` · `--check` lints prompts (exit 1 on a problem) |
+| Asset drop check / contact sheet / art sign-off | `.venv-assets\Scripts\python.exe tools\assets\check_art_in.py --game <id> [--gate]` · `.venv-assets\Scripts\python.exe tools\assets\contact_sheet.py --game <id> [--sign "<name>"]` |
+| Ingest owner assets into a skin | `.venv-assets\Scripts\python.exe tools\assets\ingest.py --game <id> --all` (or `--slot <slotId> [<file>]`; `--force`) → `skins\<skin>\assets\`, `tiles\`, `audio\`, `assets.lock.json`; then `scripts\sync.ps1 -Game <id>` |
+| Skin slot manifest / static folder | `math-sdk\env\Scripts\python.exe tools\gen\gen_assets_ts.py --game <id>` · `... tools\gen\gen_web_static.py --game <id> [--check]` (both run by `sync.ps1`) |
 | Snapshot math hashes / verify | `math-sdk\env\Scripts\python.exe tools\golden\snapshot.py seventh_veil --write <file>` · `... --verify <file>` (exit 1 on any difference) |
 | Math → web config | `math-sdk\env\Scripts\python.exe scripts\gen_fe_config.py [--game <gameId>]` |
 | Skin → web data (`build\<id>\web\`) | `math-sdk\env\Scripts\python.exe tools\gen\gen_rules.py --game <gameId>` · `... tools\gen\gen_skin_ts.py --game <gameId>` |
@@ -113,11 +125,14 @@ Run from `stake\` in PowerShell.
 | Books → stories + contract check | `math-sdk\env\Scripts\python.exe scripts\books_to_stories.py [--game <gameId>] [--check]` |
 | Web install | `Push-Location web-sdk; pnpm install; Pop-Location` |
 | Demo data + HTTPS cert (once per math change) | `math-sdk\env\Scripts\python.exe scripts\books_to_mock.py [--game <gameId>]; powershell -ExecutionPolicy Bypass -File scripts\dev_cert.ps1` |
-| Demo play, 1,000 USD balance (port 3007) | `Push-Location web-sdk\apps\seventh-veil; pnpm run dev:demo`, open `https://localhost:3007/?sessionID=demo&rgs_url=localhost:3007/rgs&lang=en` |
-| Storybook (port 6007) | `Push-Location web-sdk\apps\seventh-veil; pnpm run storybook` |
-| Dev against a real RGS session (port 3007) | `Push-Location web-sdk; pnpm run dev --filter=seventh-veil` |
-| Build | `Push-Location web-sdk; pnpm run build --filter=seventh-veil; Pop-Location` |
-| e2e gate (starts dev server with mock RGS) | `Push-Location tools\e2e; pnpm exec playwright test; Pop-Location` |
+| Demo play, 1,000 USD balance (port 3007) | `$env:GAME='<gameId>'; Push-Location web-sdk\apps\cluster-tumble; pnpm run dev:demo`, open `https://localhost:3007/?sessionID=demo&rgs_url=localhost:3007/rgs&lang=en` |
+| Storybook (port 6007) | `$env:GAME='<gameId>'; Push-Location web-sdk\apps\cluster-tumble; pnpm run storybook` |
+| Dev against a real RGS session (port 3007) | `$env:GAME='<gameId>'; Push-Location web-sdk\apps\cluster-tumble; pnpm exec vite dev --port 3007` |
+| Build (one game at a time) | `powershell -ExecutionPolicy Bypass -File tools\web_build.ps1 -Game <gameId>` → `build\<gameId>\dist` |
+| Workspace packages (fresh checkout, before the first build) | `Push-Location web-sdk; pnpm exec turbo run build --filter="cluster-tumble^..." --no-daemon; Pop-Location` |
+| Install order (any web install) | `Push-Location web-sdk; pnpm install; Pop-Location` → `scripts\sync.ps1` (mirrors the lockfile to `core\web\pnpm-lock.yaml`) → `scripts\doctor.ps1` |
+| e2e gate (starts dev server with mock RGS) | `$env:GAME='<gameId>'; Push-Location tools\e2e; pnpm exec playwright test; Pop-Location` |
+| Screenshot baselines (deterministic frames) | verify: `$env:GAME='<gameId>'; Push-Location tools\e2e; pnpm exec playwright test baseline; Pop-Location` · capture: add `--update-snapshots` (owner-approved re-baseline only) |
 | Currency check | `node --experimental-strip-types scripts\check_amount.ts` |
 | No external URLs in build | `powershell -ExecutionPolicy Bypass -File scripts\check_external_urls.ps1 [-Game <gameId>]` |
 
@@ -175,6 +190,11 @@ Books → `bookEventHandlerMap` → EmitterEvents. Event types: `reveal`, `winIn
 | Q26 | Observed Engine review turnaround (sets the real cadence ceiling) | project owner | no |
 | Q27 | Seeded copy of the optimizer in `core\` (reproducible weights) vs capture-only weights | project owner | M8 |
 | Q28 | ~~Retune targets~~ closed 2026-11-06: star buy median ~60× (now 43×); omen/prophecy get more frequent mid wins (more spins pay above cost), bonus stays the main draw | — | no |
+| Q29 | ~~Final asset storage~~ closed 2026-11-07: edited finals tracked in git (≤10 MB per game); raw AI output in `art_in\` (ignored), zipped per Q2 | — | no |
+| Q30 | Distribution per factory game. Default: every cluster-tumble game ships Only on Stake; network only for a second core (network forbids reskins, stake-engine.com/docs/distribution) | project owner | M16 |
+| Q31 | ~~Human-edit tool~~ closed 2026-11-07: images edited in Photopea; art sign-off in the owner's name | — | no |
+| Q32 | ~~Art privacy~~ closed 2026-11-07: Midjourney Pro (Stealth) | — | no |
+| Q33 | ~~Spine~~ closed 2026-11-07: Oracle ships with code-driven motion on flat images; Spine stays an optional per-slot upgrade. Audio needs licence + source only (no human edit) | — | no |
 | Q16 | ElevenLabs self-serve **music** terms exclude "Studio Games"; whether its **sound effects** terms allow a commercial online slot on Starter is not confirmed. docs/09 uses CC0 SFX until this is closed. Check elevenlabs.io/terms-of-use and the SFX terms, or ask support | project owner | M6 |
 
 ## 12. Sources

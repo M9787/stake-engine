@@ -9,9 +9,8 @@
 param([string]$Game = 'seventh_veil')
 
 $root = Split-Path -Parent $PSScriptRoot
-# Same map as tools\gamedef\gamectx.py: games with a legacy app folder, else the core app (M10).
-$legacy = @{ 'seventh_veil' = 'seventh-veil' }
-$app = if ($legacy.ContainsKey($Game)) { $legacy[$Game] } else { 'cluster-tumble' }
+# One core app for every game (M10 slice 10.2b, same as tools\gamedef\gamectx.py).
+$app = 'cluster-tumble'
 $out = Join-Path $root "web-sdk\apps\$app\.svelte-kit\output"
 if (-not (Test-Path $out)) { Write-Host "FAIL  no build output at $out"; exit 1 }
 $scan = @((Join-Path $out 'client'), (Join-Path $out 'prerendered'))

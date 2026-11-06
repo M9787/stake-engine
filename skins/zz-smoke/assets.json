@@ -1,0 +1,38 @@
+{
+  "_comment": "Test skin: every slot stays on its procedural fallback.",
+  "schemaVersion": 1,
+  "style": {
+    "suffix": ", clean flat test art, no text, no letters, no numbers",
+    "cutout": "isolated object on plain black background",
+    "heroScene": "a simple gem table",
+    "tileFigure": "a single gem",
+    "fontMood": "plain sans",
+    "motifs": {
+      "high": "faceted gem",
+      "low": "card letter tile",
+      "scatter": "glowing orb",
+      "sigil": "simple ring",
+      "ornament": "thin metal",
+      "transition": "soft light",
+      "ui": "flat metal",
+      "emblem": "a gem"
+    },
+    "scenes": {
+      "base": "dark studio backdrop",
+      "vortex": "warm swirling backdrop"
+    },
+    "music": {
+      "base": "calm synth pad",
+      "feature": "upbeat synth",
+      "stingColour": "bright synth"
+    },
+    "sfx": {
+      "land": "soft tap",
+      "scatterLand": "chime",
+      "scatterWin": "rising chime",
+      "retrigger": "gong",
+      "winEnd": "soft resolve"
+    }
+  },
+  "slots": {}
+}

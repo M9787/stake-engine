@@ -32,9 +32,10 @@ SCHEMA = ROOT / "core" / "schema" / "game-definition.v1.schema.json"
 # Restricted social-casino phrases (Engine jurisdiction requirements), kept in one place: wording.ts.
 WORDING_FILES = [
     ROOT / "core" / "web" / "cluster-tumble" / "src" / "game" / "wording.ts",
-    ROOT / "game" / "web" / "seventh-veil" / "src" / "game" / "wording.ts",
 ]
 MIN_BOOKS = {"wincap": 100, "freegame": 1000, "zero": 1000, "basegame": 1000}
+# Preview tier (CT_TIER=preview, 10k sims): smaller minimums; output is an estimate, never published.
+MIN_BOOKS_PREVIEW = {"wincap": 10, "freegame": 100, "zero": 100, "basegame": 100}
 RTP_TOLERANCE = 0.0005
 
 
@@ -210,14 +211,17 @@ def validate(game_path: Path):
             if abs(total - 1) > 1e-6:
                 err(f"{path}/quotas", f"Quotas add up to {total:.4f}; they must add up to 1.")
         sims = gdef["math"]["sims"].get(m["name"])
+        preview = "--tier" in sys.argv and sys.argv[sys.argv.index("--tier") + 1:][:1] == ["preview"]
         if sims is None:
             err(f"math/sims/{m['name']}", "No sim count for this mode.")
         else:
+            if preview:
+                sims = 10_000  # CT_TIER=preview (core run_core.py PREVIEW_SIMS)
             q = dict(m["quotas"])
             if m["kind"] == "buy":
                 q["freegame"] = 1 - q["wincap"]
             for key, share in q.items():
-                need = MIN_BOOKS[key]
+                need = (MIN_BOOKS_PREVIEW if preview else MIN_BOOKS)[key]
                 if share * sims < need:
                     err(f"{path}/quotas/{key}", f"Only {share * sims:.0f} {key} books at {sims} sims; at least {need} are needed.")
     costs = [m["cost"] for m in gdef["modes"]]
@@ -254,8 +258,62 @@ def validate(game_path: Path):
         if name not in [m["name"] for m in gdef["modes"]]:
             err(f"math/targets/{name}", "Target for a mode that does not exist.")
 
+    check_presentation(gdef, err)
     check_texts(game_path, gdef, err, warn)
     return gdef, errors, warnings
+
+
+def largest_cluster(grid, symbol_ids, wild_ids):
+    """Size of the biggest orthogonal group of one pay symbol (wilds join any group). grid[reel][row]."""
+    best = 0
+    for sym in symbol_ids:
+        seen = set()
+        for c, col in enumerate(grid):
+            for r, cell in enumerate(col):
+                if cell != sym or (c, r) in seen:
+                    continue
+                stack, size, local = [(c, r)], 0, {(c, r)}
+                while stack:
+                    x, y = stack.pop()
+                    size += 1
+                    for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                        if 0 <= nx < len(grid) and 0 <= ny < len(grid[nx]) and (nx, ny) not in local:
+                            if grid[nx][ny] == sym or grid[nx][ny] in wild_ids:
+                                local.add((nx, ny))
+                                stack.append((nx, ny))
+                seen |= {p for p in local if grid[p[0]][p[1]] == sym}
+                best = max(best, size)
+    return best
+
+
+def check_presentation(gdef: dict, err):
+    """presentation.initialBoard: right shape, known symbols, and no fake near-miss (plan v3.3 C5-r2)."""
+    board = gdef.get("presentation", {}).get("initialBoard")
+    if not board:
+        return
+    reels, rows = gdef["board"]["reels"], gdef["board"]["rows"]
+    pad = 1 if gdef["board"].get("includePadding", True) else 0
+    path = "presentation/initialBoard"
+    if len(board) != reels or any(len(col) != rows + 2 * pad for col in board):
+        err(path, f"Needs {reels} reels of {rows + 2 * pad} symbols ({rows} visible + {2 * pad} padding).")
+        return
+    known = {s["id"] for s in gdef["symbols"]}
+    unknown = sorted({c for col in board for c in col} - known)
+    if unknown:
+        err(path, f"Unknown symbols {unknown}.")
+        return
+    visible = [col[pad:pad + rows] for col in board]
+    pays = [s["id"] for s in gdef["symbols"] if s["role"] == "pay"]
+    wilds = {s["id"] for s in gdef["symbols"] if s["role"] == "wild"}
+    min_cluster = gdef["paytable"]["bands"][0][0]
+    biggest = largest_cluster(visible, pays, wilds)
+    if biggest >= min_cluster:
+        err(path, f"Shows a paying cluster of {biggest} (minimum win is {min_cluster}) before any spin: a fake win.")
+    scatter = next(s["id"] for s in gdef["symbols"] if s["role"] == "scatter")
+    n_scatter = sum(col.count(scatter) for col in visible)
+    min_trigger = min(int(k) for k in gdef["freespinTriggers"]["basegame"])
+    if n_scatter >= min_trigger:
+        err(path, f"Shows {n_scatter} scatters (bonus triggers at {min_trigger}) before any spin: a fake near-miss.")
 
 
 def check_texts(game_path: Path, gdef: dict, err, warn):
@@ -293,7 +351,8 @@ def check_texts(game_path: Path, gdef: dict, err, warn):
 
 
 def main():
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    argv = sys.argv[1:]
+    args = [a for i, a in enumerate(argv) if not a.startswith("--") and not (i > 0 and argv[i - 1] == "--tier")]
     if len(args) != 1:
         print(__doc__)
         sys.exit(2)

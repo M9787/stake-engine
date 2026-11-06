@@ -31,8 +31,8 @@ Thumbs.db
 .idea/
 
 # Game source caches (static\ is tracked since 2026-10-28: assets sync from game\ into web-sdk\)
-game/web/seventh-veil/node_modules/
-game/web/seventh-veil/.svelte-kit/
+core/web/cluster-tumble/node_modules/
+core/web/cluster-tumble/.svelte-kit/
 .mock-rgs/
 
 # Browser automation artifacts
@@ -45,7 +45,7 @@ game/web/seventh-veil/.svelte-kit/
 # Engine upload staging (built from web-sdk output)
 upload/
 
-# Raw art/audio inputs from the owner (cleaned outputs go to game\web\seventh-veil\static)
+# Raw art/audio inputs from the owner (cleaned outputs go to skins\<skin>\assets, see docs/10 v3.3)
 art_in/
 audio_in/
 
@@ -60,3 +60,10 @@ audio_in/
 /tools/e2e/test-results/
 /tools/e2e/playwright-report/
 /tools/e2e/shots/
+
+# Releases (docs/10 plan v3.3 M11): only the manifest and submission notes are tracked.
+/release/**
+!/release/*/
+!/release/*/*/
+!/release/*/*/manifest.json
+!/release/*/*/submission.md

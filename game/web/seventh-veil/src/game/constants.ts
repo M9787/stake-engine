@@ -2,7 +2,8 @@ import _ from 'lodash';
 
 import type { RawSymbol, SymbolState } from './types';
 
-export const SYMBOL_SIZE = 80;
+// 72 (was 80): the 7x7 board plus frame fits between the title and the HUD at 1280x720.
+export const SYMBOL_SIZE = 72;
 
 export const REEL_PADDING = 0.53;
 

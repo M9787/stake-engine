@@ -86,13 +86,20 @@ export const stateGame = $state({
 	tumbleBoardBase: [] as TumbleSymbol[][],
 	multiplierBoard: [] as (MultiplierSymbol | undefined)[][],
 	scatterCounter: 0,
-	bonusVariant: null as 'star' | 'tower' | null,
+	bonusVariant: null as string | null, // a bonus variant id from game.json features.bonusVariants
 	veilTorn: false,
 });
 
+// Board centre height per layout, as a share of the main layout height. The HUD sits at the
+// bottom (balance/win/bet panels), so the 7x7 board sits above centre and the bottom row stays
+// clear of it at 1280x720, 1200x675, 400x225 and 425x812 (tools\e2e shots, docs/10 M6c).
+const BOARD_CENTRE_Y = { desktop: 0.4, landscape: 0.41, tablet: 0.4, portrait: 0.4 } as const;
+
 const boardLayout = () => ({
 	x: stateLayoutDerived.mainLayout().width * 0.5,
-	y: stateLayoutDerived.mainLayout().height * 0.5,
+	y:
+		stateLayoutDerived.mainLayout().height *
+		(BOARD_CENTRE_Y[stateLayoutDerived.layoutType() as keyof typeof BOARD_CENTRE_Y] ?? 0.4),
 	anchor: { x: 0.5, y: 0.5 },
 	pivot: { x: BOARD_SIZES.width / 2, y: BOARD_SIZES.height / 2 },
 	...BOARD_SIZES,

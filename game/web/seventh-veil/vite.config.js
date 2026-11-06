@@ -1,10 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { mergeConfig } from 'vite';
+import { mergeConfig, searchForWorkspaceRoot } from 'vite';
 // @ts-ignore
 import config from 'config-vite';
 import mockRgs from './dev/mockRgs.js';
 import { sharedPackagePatches } from './vite.patches.js';
+import { skinDir } from './svelte.config.js';
 
 const { version } = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf-8'));
 
@@ -33,11 +34,15 @@ export default mergeConfig(config(), {
 			{ find: 'webfontloader', replacement: path.resolve('src/stubs/webfontloader.js') },
 			// Money formatting for all currencies and sub-cent wins (Engine [219], [273], [78]).
 			{ find: /^utils-shared\/amount$/, replacement: path.resolve('src/overrides/amount.ts') },
+			// Non-JSON RGS answers (400 plain, 423 paused, 429) and ERR_ACT retry (docs/rgs/wallet).
+			{ find: /^rgs-fetcher$/, replacement: path.resolve('src/overrides/rgsFetcher.ts') },
 			// Our social wording, imported by patched shared i18n files (vite.patches.js).
 			{ find: /^seventh-veil\/wording$/, replacement: path.resolve('src/game/wording.ts') },
 		],
 	},
-	server: https ? { https } : {},
+	// The dev server may read the skin folder (stake/build/<GAME>/web), outside the web-sdk workspace
+	// (M6a spike rule). Keep the workspace root too: setting fs.allow replaces the default.
+	server: { ...(https ? { https } : {}), fs: { allow: [searchForWorkspaceRoot(process.cwd()), skinDir] } },
 	// Shown by GameVersion in the menu (package.json version).
 	define: { __GAME_VERSION__: JSON.stringify(version) },
 });

@@ -9,7 +9,14 @@
 //   c<CODE>    balance currency (default USD), e.g. demo_cJPY, demo_social_cXSC
 //   minround<ms>  jurisdiction.minimumRoundDuration, e.g. demo_minround3000
 //   timer / net / rtp / noslam  displaySessionTimer / displayNetPosition / displayRTP / disabledSlamstop
-// Force the next round: POST /rgs/mock/force {"sessionID": "...", "next": "maxwin" | "bonus"}
+//   maxbuy<dollars>  config.gameModes maxBet for the buy modes, e.g. demo_maxbuy5
+//   paused     /wallet/play answers 423 with no body (new bets paused)
+//   act<n>     the first n plays answer 429 ERR_ACT (the game retries), e.g. demo_act2
+//   gen / gle  /wallet/play answers 500 ERR_GEN / 400 ERR_GLE
+// Force the next round: POST /rgs/mock/force {"sessionID": "...", "next": "maxwin" | "bonus" | "loss" | "win" | "big"}
+// Forget a session (fresh balance, no open round): POST /rgs/mock/reset {"sessionID": "..."}
+// Parity with the RGS (stake-engine.com/docs/rgs/wallet, 2026-11-06): play during an open round
+// and end-round without one answer ERR_VAL; malformed JSON answers a plain-text 400.
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -24,6 +31,8 @@ const modes = {};
 const sessions = new Map();
 const rounds = new Map();
 let roundSeq = 1;
+
+const MODE_NAMES = ['base', 'omen', 'prophecy', 'star', 'tower'];
 
 const loadMode = (name) => {
 	const key = String(name).toLowerCase();
@@ -44,6 +53,11 @@ const session = (sessionID) => {
 			currency: (tokens.find((t) => /^c[A-Z]{3,5}$/.test(t)) || 'cUSD').slice(1),
 			round: null,
 			force: null,
+			maxBuy: Number((tokens.find((t) => /^maxbuy\d+(\.\d+)?$/.test(t)) || 'maxbuy0').slice(6)) * AMOUNT,
+			paused: tokens.includes('paused'),
+			actLeft: Number((tokens.find((t) => /^act\d+$/.test(t)) || 'act0').slice(3)),
+			failGen: tokens.includes('gen'),
+			failGle: tokens.includes('gle'),
 			jurisdiction: {
 				socialCasino: tokens.includes('social'),
 				disabledFullscreen: false,
@@ -64,7 +78,17 @@ const session = (sessionID) => {
 };
 
 const balance = (s) => ({ amount: s.balance, currency: s.currency });
-const fail = (code, message) => ({ status: 400, body: { error: code, message } });
+const fail = (code, message, status = 400) => ({ status, body: { error: code, message } });
+
+// config.gameModes: [{ mode, costMultiplier, maxBet }] for every mode with mock data.
+const gameModes = (s) =>
+	MODE_NAMES.map((name) => loadMode(name))
+		.filter(Boolean)
+		.map((m) => ({
+			mode: String(m.mode).toUpperCase(),
+			costMultiplier: m.cost,
+			maxBet: m.cost >= 10 && s.maxBuy ? s.maxBuy : BET_LEVELS[BET_LEVELS.length - 1],
+		}));
 
 const routes = {
 	'/wallet/authenticate': (body) => {
@@ -80,6 +104,7 @@ const routes = {
 					defaultBetLevel: AMOUNT,
 					betLevels: BET_LEVELS,
 					betModes: {},
+					gameModes: gameModes(s),
 					jurisdiction: s.jurisdiction,
 				},
 				round: s.round && s.round.active ? s.round : null,
@@ -88,18 +113,25 @@ const routes = {
 	},
 	'/wallet/play': (body) => {
 		const s = session(body.sessionID);
+		if (s.paused) return { status: 423, raw: '' };
+		if (s.actLeft > 0) {
+			s.actLeft--;
+			return fail('ERR_ACT', 'provably fair draw not taken', 429);
+		}
+		if (s.failGen) return fail('ERR_GEN', 'general server error', 500);
+		if (s.failGle) return fail('ERR_GLE', 'gambling limits exceeded');
 		const mode = loadMode(body.mode);
 		if (!mode) return fail('ERR_VAL', `unknown mode ${body.mode}`);
-		// A round left open (end-round never called) is settled first, so demo play never sticks.
-		if (s.round && s.round.active) {
-			s.balance += s.round.payout;
-			s.round = { ...s.round, active: false };
-		}
+		if (s.round && s.round.active) return fail('ERR_VAL', 'round already active');
 		if (!BET_LEVELS.includes(body.amount)) return fail('ERR_VAL', 'invalid bet amount');
+		const modeMax = gameModes(s).find((m) => m.mode === String(body.mode).toUpperCase())?.maxBet;
+		if (modeMax && body.amount > modeMax) return fail('ERR_VAL', 'bet above mode maxBet');
 		if (mode.cost >= 10 && s.jurisdiction.disabledBuyFeature) return fail('ERR_VAL', 'bonus buy disabled');
 		const charge = Math.round(body.amount * mode.cost);
 		if (charge > s.balance) return fail('ERR_IPB', 'insufficient balance');
-		const id = (s.force && mode.forced[s.force]) || mode.ids[Math.floor(Math.random() * mode.ids.length)];
+		// Book id 0 is valid (buy-mode bonus books), so test for null/undefined, not falsy.
+		const forcedId = s.force ? mode.forced[s.force] : undefined;
+		const id = forcedId ?? mode.ids[Math.floor(Math.random() * mode.ids.length)];
 		s.force = null;
 		const book = mode.books[id];
 		const payout = Math.round((body.amount * book.payoutMultiplier) / 100);
@@ -124,10 +156,9 @@ const routes = {
 	},
 	'/wallet/end-round': (body) => {
 		const s = session(body.sessionID);
-		if (s.round && s.round.active) {
-			s.balance += s.round.payout;
-			s.round = { ...s.round, active: false };
-		}
+		if (!s.round || !s.round.active) return fail('ERR_VAL', 'no active round');
+		s.balance += s.round.payout;
+		s.round = { ...s.round, active: false };
 		return { body: { balance: balance(s) } };
 	},
 	'/wallet/balance': (body) => ({ body: { balance: balance(session(body.sessionID)) } }),
@@ -135,6 +166,10 @@ const routes = {
 		const s = session(body.sessionID);
 		if (s.round) s.round.event = body.event;
 		return { body: { event: body.event } };
+	},
+	'/mock/reset': (body) => {
+		sessions.delete(body.sessionID);
+		return { body: { ok: true } };
 	},
 	'/mock/force': (body) => {
 		session(body.sessionID).force = body.next;
@@ -148,6 +183,14 @@ const send = (res, status, body) => {
 	res.setHeader('Access-Control-Allow-Origin', '*');
 	res.setHeader('Access-Control-Allow-Headers', '*');
 	res.end(JSON.stringify(body));
+};
+
+const sendRaw = (res, status, text) => {
+	res.statusCode = status;
+	res.setHeader('Content-Type', 'text/plain');
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	res.setHeader('Access-Control-Allow-Headers', '*');
+	res.end(text);
 };
 
 export default function mockRgs() {
@@ -175,9 +218,10 @@ export default function mockRgs() {
 					try {
 						body = raw ? JSON.parse(raw) : {};
 					} catch {
-						return send(res, 400, { error: 'ERR_VAL', message: 'bad json' });
+						return sendRaw(res, 400, 'Bad Request');
 					}
 					const out = handler(body);
+					if (out.raw !== undefined) return sendRaw(res, out.status, out.raw);
 					send(res, out.status || 200, out.body);
 				});
 			});

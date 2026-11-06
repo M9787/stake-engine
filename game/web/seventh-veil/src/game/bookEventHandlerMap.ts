@@ -8,6 +8,7 @@ import { playBookEvent } from './utils';
 import { winLevelMap, type WinLevel, type WinLevelData } from './winLevelMap';
 import { stateGame, stateGameDerived } from './stateGame.svelte';
 import { isCelebratedWin } from './betModes';
+import { recordRoundProgress } from './roundProgress';
 import type { BookEvent, BookEventOfType, BookEventContext } from './typesBookEvent';
 import type { Position } from './types';
 
@@ -155,6 +156,8 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		await eventEmitter.broadcastAsync({ type: 'uiShow' });
 	},
 	updateFreeSpin: async (bookEvent: BookEventOfType<'updateFreeSpin'>) => {
+		// Resume point: a reload during the bonus restarts from this free spin.
+		recordRoundProgress(bookEvent.index);
 		eventEmitter.broadcast({ type: 'freeSpinCounterShow' });
 		eventEmitter.broadcast({
 			type: 'freeSpinCounterUpdate',
@@ -243,7 +246,7 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		eventEmitter.broadcast({ type: 'globalMultiplierHide' });
 		eventEmitter.broadcast({ type: 'tumbleWinAmountHide' });
 	},
-	// seventh veil
+	// cluster_tumble core events
 	bonusVariant: async (bookEvent: BookEventOfType<'bonusVariant'>) => {
 		stateGame.bonusVariant = bookEvent.variant;
 	},

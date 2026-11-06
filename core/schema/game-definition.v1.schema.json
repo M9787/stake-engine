@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stake.local/core/schema/game-definition.v1.schema.json",
+  "title": "Game definition v1 (cluster_tumble core)",
+  "description": "One file per game (skins/<id>/game.json). The core reads it to build math, web config and texts. Fields marked x-frozen: math lock when the game is approved (docs/10 section 2).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "core", "identity", "board", "symbols", "paytable", "reels", "freespinTriggers", "features", "reelWeights", "modes", "math", "review"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "core": {
+      "type": "object", "additionalProperties": false, "required": ["family", "version"],
+      "properties": {
+        "family": { "const": "cluster_tumble", "description": "Mechanic family. Only cluster_tumble exists today." },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "description": "Core version the game was built with (git tag core-vX.Y.Z)." }
+      }
+    },
+    "identity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["gameId", "displayName", "workingName", "providerName", "providerNumber", "version"],
+      "properties": {
+        "gameId": { "type": "string", "pattern": "^[a-z][a-z0-9_]{2,40}$", "x-frozen": "math", "description": "Internal id: lower case, digits, underscore. Also the math folder name." },
+        "displayName": { "type": "string", "minLength": 2, "maxLength": 40, "description": "Name the player sees." },
+        "workingName": { "type": "string", "minLength": 2, "maxLength": 60 },
+        "providerName": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "providerNumber": { "type": "integer", "minimum": 0 },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }
+      }
+    },
+    "board": {
+      "type": "object", "additionalProperties": false, "required": ["reels", "rows"],
+      "properties": {
+        "reels": { "type": "integer", "minimum": 5, "maximum": 8, "x-frozen": "math", "description": "Columns, 5 to 8." },
+        "rows": { "type": "integer", "minimum": 5, "maximum": 8, "x-frozen": "math", "description": "Rows, 5 to 8." },
+        "includePadding": { "type": "boolean", "default": true }
+      }
+    },
+    "symbols": {
+      "type": "array", "minItems": 4, "maxItems": 16, "x-frozen": "math",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["id", "role", "nameKey"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]{0,3}$" },
+          "role": { "enum": ["pay", "scatter", "wild"] },
+          "tier": { "enum": ["high", "low"] },
+          "nameKey": { "type": "string", "description": "Key in text/en.json for the symbol name." }
+        }
+      }
+    },
+    "paytable": {
+      "type": "object", "additionalProperties": false, "required": ["bands", "pays", "minPay"], "x-frozen": "math",
+      "properties": {
+        "bands": {
+          "type": "array", "minItems": 1, "maxItems": 8,
+          "description": "Cluster-size bands [from, to]. Contiguous; the last band ends at reels x rows.",
+          "items": { "type": "array", "prefixItems": [{ "type": "integer", "minimum": 2 }, { "type": "integer", "minimum": 2 }], "items": false, "minItems": 2 }
+        },
+        "pays": {
+          "type": "object", "description": "Pay per band, in bet multiples, for each pay symbol.",
+          "additionalProperties": { "type": "array", "items": { "type": "number", "exclusiveMinimum": 0, "maximum": 100000 } }
+        },
+        "minPay": { "type": "number", "exclusiveMinimum": 0, "x-unit": "x bet", "description": "Smallest pay. Must equal the smallest value in pays." }
+      }
+    },
+    "reels": {
+      "type": "object", "additionalProperties": false, "required": ["files"], "x-frozen": "math",
+      "properties": {
+        "files": { "type": "object", "additionalProperties": { "type": "string", "pattern": "^[A-Za-z0-9_]+\\.csv$" }, "description": "Reel strip id -> CSV file in skins/<id>/math/reels." }
+      }
+    },
+    "freespinTriggers": {
+      "type": "object", "additionalProperties": false, "required": ["basegame", "freegame"], "x-frozen": "math",
+      "description": "Scatter count -> free spins awarded. Every count from the minimum up to the most scatters a board can show needs a key.",
+      "properties": {
+        "basegame": { "$ref": "#/$defs/countMap" },
+        "freegame": { "$ref": "#/$defs/countMap" }
+      }
+    },
+    "features": {
+      "type": "object", "additionalProperties": false, "required": ["gridMultiplier", "bonusVariants"], "x-frozen": "math",
+      "properties": {
+        "gridMultiplier": {
+          "type": "object", "additionalProperties": false, "required": ["enabled", "cap"],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "cap": { "type": "integer", "minimum": 2, "maximum": 4096, "description": "Highest spot multiplier (doubles on each hit)." },
+            "scope": { "enum": ["spin"], "default": "spin", "description": "Base game: the grid clears after each spin. Bonuses keep it." }
+          }
+        },
+        "bonusVariants": {
+          "type": "array", "minItems": 1, "maxItems": 4,
+          "description": "Bonus kinds. The trigger scatter count picks the variant (ranges must not overlap).",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["id", "scatterMin", "scatterMax", "precharge"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,20}$" },
+              "scatterMin": { "type": "integer", "minimum": 2 },
+              "scatterMax": { "type": "integer", "minimum": 2 },
+              "precharge": {
+                "type": "object", "additionalProperties": false, "required": ["spots", "value"],
+                "properties": {
+                  "spots": { "type": "integer", "minimum": 0, "maximum": 64, "description": "Spots already charged when the bonus starts." },
+                  "value": { "type": "integer", "minimum": 2, "maximum": 1024, "description": "Multiplier on each pre-charged spot." }
+                }
+              },
+              "buyFloor": { "type": "number", "minimum": 0, "x-unit": "x bet", "description": "Bought bonuses that would pay less than this are re-simulated." }
+            }
+          }
+        }
+      }
+    },
+    "reelWeights": {
+      "type": "object", "additionalProperties": false, "required": ["fg", "cap", "baseOnly"], "x-frozen": "math",
+      "properties": {
+        "fg": { "$ref": "#/$defs/reelWeightSet" },
+        "cap": { "$ref": "#/$defs/reelWeightSet" },
+        "baseOnly": { "$ref": "#/$defs/reelWeightSet" }
+      }
+    },
+    "modes": {
+      "type": "array", "minItems": 1, "maxItems": 8, "x-frozen": "math",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["name", "kind", "cost", "quotas", "scatterTriggers"],
+        "properties": {
+          "name": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,32}$", "description": "Mode name; also the web key and the replay mode name." },
+          "kind": { "enum": ["spin", "buy"] },
+          "variant": { "type": "string", "description": "Buy modes: the bonus variant id they start." },
+          "cost": { "type": "number", "minimum": 1, "maximum": 50000, "x-unit": "x bet" },
+          "quotas": {
+            "type": "object", "additionalProperties": false,
+            "description": "Share of simulated books per outcome type (pool composition, not probability).",
+            "properties": {
+              "wincap": { "type": "number", "exclusiveMinimum": 0, "maximum": 0.05 },
+              "freegame": { "type": "number", "minimum": 0, "maximum": 1 },
+              "zero": { "type": "number", "minimum": 0, "maximum": 1 },
+              "basegame": { "type": "number", "minimum": 0, "maximum": 1 }
+            },
+            "required": ["wincap"]
+          },
+          "scatterTriggers": {
+            "type": "object", "additionalProperties": false,
+            "properties": {
+              "wincap": { "$ref": "#/$defs/countMap" },
+              "freegame": { "$ref": "#/$defs/countMap" },
+              "all": { "$ref": "#/$defs/countMap" }
+            }
+          }
+        }
+      }
+    },
+    "math": {
+      "type": "object", "additionalProperties": false, "required": ["rtp", "wincap", "sims", "run", "targets"], "x-frozen": "math",
+      "properties": {
+        "rtp": { "type": "number", "minimum": 0.96, "maximum": 0.967, "description": "Return to player, same in every mode (Engine band 96.0-96.7%)." },
+        "wincap": { "type": "number", "minimum": 100, "maximum": 100000, "x-unit": "x bet", "description": "Max win." },
+        "sims": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 10000, "maximum": 1000000 } },
+        "run": {
+          "type": "object", "additionalProperties": false, "required": ["threads", "batching"],
+          "properties": {
+            "threads": { "type": "integer", "minimum": 1, "maximum": 64 },
+            "rustThreads": { "type": "integer", "minimum": 1, "maximum": 64 },
+            "batching": { "type": "integer", "minimum": 1000 }
+          }
+        },
+        "targets": {
+          "type": "object",
+          "additionalProperties": { "oneOf": [{ "$ref": "#/$defs/spinTarget" }, { "$ref": "#/$defs/buyTarget" }] }
+        }
+      }
+    },
+    "theme": {
+      "type": "object", "additionalProperties": false,
+      "description": "Look of the game. Used by the asset build (tools: assets_build.py) and the web skin. Visual only: never changes the math.",
+      "properties": {
+        "palette": {
+          "type": "object", "minProperties": 2, "maxProperties": 12,
+          "description": "Named style colours. Imported art is pulled toward the nearest of these.",
+          "additionalProperties": { "$ref": "#/$defs/hexColor" }
+        },
+        "palettePull": { "type": "number", "minimum": 0, "maximum": 1, "description": "How strongly art colours move toward the palette. 0 = keep, 1 = snap." },
+        "glow": {
+          "type": "object", "additionalProperties": false, "required": ["color", "radius", "strength"],
+          "description": "One soft glow drawn behind every cut-out symbol.",
+          "properties": {
+            "color": { "$ref": "#/$defs/hexColor" },
+            "radius": { "type": "integer", "minimum": 0, "maximum": 32, "x-unit": "px at 256 px" },
+            "strength": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "fontGradient": { "type": "array", "minItems": 2, "maxItems": 4, "items": { "$ref": "#/$defs/hexColor" }, "description": "Win-number colours, top to bottom." },
+        "fontStroke": { "$ref": "#/$defs/hexColor", "description": "Outline colour of win numbers." }
+      }
+    },
+    "review": {
+      "type": "object", "additionalProperties": false, "required": ["signatureMoment", "originality"],
+      "properties": {
+        "signatureMoment": { "type": "string", "minLength": 10 },
+        "originality": { "type": "array", "items": { "type": "string" }, "minItems": 2, "description": "At least 2 mechanic differences from earlier factory games." },
+        "artSignoff": { "type": ["object", "null"], "properties": { "by": { "type": "string" }, "date": { "type": "string" }, "assetSetSha256": { "type": "string" } } }
+      }
+    }
+  },
+  "$defs": {
+    "hexColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "description": "Colour as #RRGGBB." },
+    "countMap": {
+      "type": "object", "propertyNames": { "pattern": "^[0-9]+$" },
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "reelWeightSet": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "basegame": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 1 } },
+        "freegame": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 1 } }
+      }
+    },
+    "range": { "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }], "items": false, "minItems": 2 },
+    "scaleRule": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/range" }, { "type": "number", "exclusiveMinimum": 0 }], "items": false, "minItems": 2 },
+    "spinTarget": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "wincapRtp", "freegameRtp", "bonusOneIn", "basegameRtp", "hitOneIn", "midWinLift", "baseScaling"],
+      "properties": {
+        "kind": { "const": "spin" },
+        "wincapRtp": { "type": "number", "minimum": 0, "maximum": 0.05 },
+        "freegameRtp": { "type": "number", "minimum": 0, "maximum": 1 },
+        "bonusOneIn": { "type": "number", "minimum": 20, "maximum": 2000, "description": "Bonus about 1 in N spins." },
+        "basegameRtp": { "type": "number", "minimum": 0, "maximum": 1 },
+        "hitOneIn": { "type": "number", "minimum": 1.5, "maximum": 50, "description": "A winning spin about 1 in N (Engine guidance: at least 1 in 50)." },
+        "midWinLift": { "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }], "items": false, "minItems": 2 },
+        "baseScaling": { "type": "array", "items": { "$ref": "#/$defs/scaleRule" } }
+      }
+    },
+    "buyTarget": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "wincapRtp", "freegameRtp", "minM2m", "maxM2m", "scaling"],
+      "properties": {
+        "kind": { "const": "buy" },
+        "wincapRtp": { "type": "number", "minimum": 0, "maximum": 0.05 },
+        "freegameRtp": { "type": "number", "minimum": 0, "maximum": 1 },
+        "minM2m": { "type": "number", "minimum": 0.5 },
+        "maxM2m": { "type": "number", "minimum": 1 },
+        "scaling": { "type": "array", "items": { "$ref": "#/$defs/scaleRule" } },
+        "reshape": {
+          "type": "object", "additionalProperties": false, "required": ["split", "belowMass", "hiFrom"],
+          "properties": { "split": { "type": "number" }, "belowMass": { "type": "number", "minimum": 0, "maximum": 1 }, "hiFrom": { "type": "number" } }
+        }
+      }
+    }
+  }
+}

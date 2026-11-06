@@ -1,49 +1,20 @@
 <script lang="ts">
-	// Pay table + rules. Every value comes from config.ts (generated from the math),
+	// Pay table + rules. Every number and every game-specific text comes from the skin
+	// ($skin/skin.generated: tools/gen/gen_rules.py fills them from game.json and the published math),
 	// so what the player reads always matches the published math (docs/08-compliance.md).
+	import skin from '$skin/skin.generated';
 	import config from '../game/config';
 	import { t } from '../game/wording';
 
 	type Props = { section: 'payTable' | 'gameRules' };
 	const props: Props = $props();
 
-	const SYMBOL_NAMES: Record<string, string> = {
-		H1: 'The High Priestess',
-		H2: 'The Tower',
-		H3: 'The Moon',
-		H4: 'The Magician',
-		L1: 'Fehu',
-		L2: 'Ansuz',
-		L3: 'Raido',
-		L4: 'Kenaz',
-	};
-	const BANDS = [
-		{ label: '5', size: '5' },
-		{ label: '6-8', size: '6' },
-		{ label: '9-12', size: '9' },
-		{ label: '13+', size: '13' },
-	];
-
-	type Paytable = { [size: string]: number }[] | null;
-	const payFor = (paytable: Paytable, size: string) =>
-		paytable?.find((entry) => size in entry)?.[size];
-
-	const paySymbols = Object.entries(config.symbols as Record<string, { paytable: Paytable }>)
-		.filter(([name]) => name in SYMBOL_NAMES)
-		.sort(([a], [b]) => Object.keys(SYMBOL_NAMES).indexOf(a) - Object.keys(SYMBOL_NAMES).indexOf(b));
-
-	const MODE_LABELS: Record<string, string> = {
-		base: 'Fate: Veil',
-		omen: 'Fate: Omen',
-		prophecy: 'Fate: Prophecy',
-		star: 'Star Bonus (buy)',
-		tower: 'Tower Bonus (buy)',
-	};
-	const modes = Object.entries(config.betModes);
+	const texts: Record<string, string> = skin.rules.texts;
+	const text = (key: string, fallback = '') => texts[key] ?? fallback;
+	const { bands, rows } = skin.rules.paytable;
+	const modes = skin.rules.modes;
 	const fmt = (value: number) => value.toLocaleString('en-US');
-	const minPay = Math.min(
-		...paySymbols.flatMap(([, symbol]) => (symbol.paytable ?? []).flatMap((entry) => Object.values(entry))),
-	);
+	const minCluster = skin.rules.paytable.bands[0].replace('+', '').split('-')[0];
 	const BUTTONS: [string, string][] = [
 		['Spin', 'Starts a round at the current bet. Space also spins where allowed; holding Space keeps spinning.'],
 		['Stop', 'Pressing Spin during a round shows the result at once, where allowed. Results are the same.'],
@@ -53,7 +24,7 @@
 		['Win', 'The win of the current round.'],
 		['Turbo', 'Faster animations. Results are the same.'],
 		['Auto spin', 'Plays a chosen number of rounds after you confirm; stops on your loss or win limits.'],
-		['Buy bonus', 'Opens the Fate modes (Omen, Prophecy) and the Star and Tower bonus buys, with price, RTP and max win.'],
+		['Buy bonus', text('button.buyBonus', 'Opens the game modes and bonus buys, with price, RTP and max win.')],
 		['Menu', 'Pay table, game rules, settings and sound.'],
 		['Settings', 'Master, music and sound effect volume.'],
 		['Sound', 'Turns all sound on or off.'],
@@ -64,69 +35,57 @@
 <div class="info">
 	{#if props.section === 'payTable'}
 		<h2>{t('PAY TABLE')}</h2>
-		<p>{t('Pays for clusters of 5 or more touching symbols, as multiples of the bet.')}</p>
+		<p>{t(`Pays for clusters of ${minCluster} or more touching symbols, as multiples of the bet.`)}</p>
 		<table>
 			<thead>
 				<tr>
 					<th>Symbol</th>
-					{#each BANDS as band}<th>{band.label}</th>{/each}
+					{#each bands as band}<th>{band}</th>{/each}
 				</tr>
 			</thead>
 			<tbody>
-				{#each paySymbols as [name, symbol]}
+				{#each rows as row}
 					<tr>
-						<td>{SYMBOL_NAMES[name]}</td>
-						{#each BANDS as band}<td>{payFor(symbol.paytable, band.size)}x</td>{/each}
+						<td>{row.name}</td>
+						{#each row.pays as pay}<td>{pay}x</td>{/each}
 					</tr>
 				{/each}
 			</tbody>
 		</table>
-		<p>{t('Crystal Ball (scatter): 3-4 start the Star Bonus, 5 or more start the Tower Bonus.')}</p>
-		<p>
-			{t(`In Fate: Veil the smallest pay is ${minPay}x, so every winning spin pays more than the bet.`)}
-		</p>
+		{#if texts['rules.scatter']}<p>{t(text('rules.scatter'))}</p>{/if}
+		{#if texts['rules.minPay']}<p>{t(text('rules.minPay'))}</p>{/if}
 	{:else}
 		<h2>{t('GAME RULES')}</h2>
 		<h3>Clusters and tumbles</h3>
 		<p>
-			{t(`7x7 grid. 5 or more touching identical symbols form a cluster and pay. Winning symbols explode
+			{t(`${skin.board.reels}x${skin.board.rows} grid. ${minCluster} or more touching identical symbols form a cluster and pay. Winning symbols explode
 			and new symbols fall in. This repeats until no cluster remains.`)}
 		</p>
-		<h3>Charged grid</h3>
-		<p>
-			{t(`A win on an empty spot marks it with a sigil. A win on a marked spot charges it to x2. Each
-			later win on that spot doubles it: x4, x8, x16, x32, x64, x128, x256, x512, up to x1024. A
-			cluster's pay is multiplied by the sum of the charged spots under it. In the base game the grid
-			clears after each spin.`)}
-		</p>
-		<h3>Bonuses</h3>
-		<p>
-			{t(`Star Bonus: 12 free spins (3 Crystal Balls) or 15 (4 Crystal Balls), starting with 5 spots
-			already charged at x2. Tower Bonus: 15-18 free
-			spins, starting with 12 spots already charged at x2. In both bonuses the grid persists for the
-			whole bonus. 3 or more Crystal Balls during a bonus add 5 spins.`)}
-		</p>
+		{#if texts['rules.charged']}
+			<h3>{text('rules.charged.title', 'Charged grid')}</h3>
+			<p>{t(text('rules.charged'))}</p>
+		{/if}
+		{#if texts['rules.bonuses']}
+			<h3>{text('rules.bonuses.title', 'Bonuses')}</h3>
+			<p>{t(text('rules.bonuses'))}</p>
+		{/if}
 		<h3>Modes</h3>
 		<table>
 			<thead>
 				<tr><th>Mode</th><th>{t('Price')}</th><th>RTP</th><th>Max win</th></tr>
 			</thead>
 			<tbody>
-				{#each modes as [key, mode]}
+				{#each modes as mode}
 					<tr>
-						<td>{t(MODE_LABELS[key] ?? key)}</td>
+						<td>{t(mode.label)}</td>
 						<td>{t(`${mode.cost}x bet`)}</td>
-						<td>{(mode.rtp * 100).toFixed(2)}%</td>
-						<td>{fmt(mode.max_win)}x</td>
+						<td>{((mode.rtp ?? 0) * 100).toFixed(2)}%</td>
+						<td>{fmt(mode.maxWin ?? 0)}x</td>
 					</tr>
 				{/each}
 			</tbody>
 		</table>
-		<p>
-			{t(`Fate: Omen and Fate: Prophecy raise the price of each spin in exchange for more frequent
-			bonuses. In these modes many wins return less than the spin price; the value comes mostly from
-			the bonuses. RTP is the same in every mode.`)}
-		</p>
+		{#if texts['rules.modes']}<p>{t(text('rules.modes'))}</p>{/if}
 		<p>
 			{t(`Bonus buys start a bonus at once. A bonus can pay less than its price.`)}
 		</p>
@@ -141,7 +100,7 @@
 		<h3>General</h3>
 		<p>
 			{t(`Game RTP ${(config.rtp * 100).toFixed(2)}%. Each round is independent. A round ends when it
-			reaches the maximum win of ${fmt(config.betModes.base.max_win)}x. Wins are shown in your currency
+			reaches the maximum win of ${fmt(modes[0].maxWin ?? 0)}x. Wins are shown in your currency
 			and added to your balance when the round ends.`)}
 		</p>
 		<p>

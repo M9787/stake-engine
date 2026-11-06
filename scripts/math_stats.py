@@ -1,7 +1,8 @@
 """Per-mode math stats for a math-sdk game: RTP, hit rate, win>cost, max win, quantiles,
 Engine non-critical metrics, books<->lookup payout match, event types.
 
-Usage (from stake\\): math-sdk\\env\\Scripts\\python.exe scripts\\math_stats.py seventh_veil [--brief] [--sessions]
+Usage (from stake\\): math-sdk\\env\\Scripts\\python.exe scripts\\math_stats.py seventh_veil [--brief] [--sessions] [--raw]
+--raw reads the unit-weight lookup tables (pre-optimizer pool) instead of the published weights.
 --sessions adds a session-survival check for spin modes: 100 base bets start, 20,000 sessions.
 """
 
@@ -46,6 +47,15 @@ MAX_PAYOUT_X = 100_000
 MAX_COST_X = 5_000
 RTP_BAND = (0.960, 0.967)
 
+# Engine CRITICAL tests: the submission form blocks on any of these
+# (stake-engine.com/docs/approval-guidelines/math-verification, fetched 2026-11-06).
+CRIT_MAX_WIN_X = 1_000_000
+CRIT_MAX_COST_X = 50_000
+CRIT_MIN_STD_BASE = 0.6  # raw std of every 1.0x mode (at cost 1.0 raw std = std per cost)
+# Engine guidance (not blocking): hit rate 1 in 50 or better, max win more often than 1 in 10M.
+SOFT_MIN_HIT = 1 / 50
+SOFT_MAX_WIN_1_IN = 10_000_000
+
 
 def read_lookup(path):
     rows = []
@@ -87,13 +97,12 @@ def cvar(dist, total, alpha=0.999):
 
 def mode_stats(mode):
     name, cost = mode["name"], mode["cost"]
-    # Publish lookup is written by the optimizer / format checks. Without them, the raw
-    # (unit-weight) table in library\lookup_tables is newer; use whichever is newer.
+    # Always the published (optimized) weights. --raw reads the unit-weight table in
+    # library\lookup_tables instead (pre-optimizer pool). The old "newer file wins" rule
+    # picked the raw table after a sims-only run (SV_SKIP_OPT / SV_REUSE_WEIGHTS), M6a 2026-11-06.
     pub_lut = os.path.join(PUB, mode["weights"])
     raw_lut = os.path.join(ROOT, "library", "lookup_tables", f"lookUpTable_{name}.csv")
-    lut = pub_lut
-    if os.path.exists(raw_lut) and os.path.getmtime(raw_lut) > os.path.getmtime(pub_lut):
-        lut = raw_lut
+    lut = raw_lut if "--raw" in sys.argv else pub_lut
     rows = read_lookup(lut)
     total = sum(w for _, w, _ in rows)
     dist = {}
@@ -199,6 +208,26 @@ def main():
         failed.append("max_payout")
     if any(r["cost"] > MAX_COST_X for r in results):
         failed.append("cost_multiplier")
+    critical = []
+    if min(r["cost"] for r in results) != 1.0:
+        critical.append("cheapest mode cost is not 1.0x")
+    for r in results:
+        if r["cost"] == 1.0 and r["std_raw"] < CRIT_MIN_STD_BASE:
+            critical.append(f"{r['mode']}: std {r['std_raw']} < {CRIT_MIN_STD_BASE}")
+        if r["max_win_x"] > CRIT_MAX_WIN_X:
+            critical.append(f"{r['mode']}: max win {r['max_win_x']}x > {CRIT_MAX_WIN_X}x")
+        if r["cost"] > CRIT_MAX_COST_X:
+            critical.append(f"{r['mode']}: cost {r['cost']}x > {CRIT_MAX_COST_X}x")
+        if not RTP_BAND[0] <= r["rtp"] <= RTP_BAND[1] + 1e-9:
+            critical.append(f"{r['mode']}: rtp {r['rtp']} outside {RTP_BAND}")
+        if not r["books_match_lookup"]:
+            critical.append(f"{r['mode']}: books payouts do not match lookup")
+    soft = []
+    for r in results:
+        if r["hit_rate"] < SOFT_MIN_HIT:
+            soft.append(f"{r['mode']}: hit rate {r['hit_rate']} below 1 in 50")
+        if r["max_win_1_in"] and r["max_win_1_in"] > SOFT_MAX_WIN_1_IN:
+            soft.append(f"{r['mode']}: max win 1 in {r['max_win_1_in']} rarer than 1 in 10M")
     for r in results:
         rows = r.pop("_rows")
         if "--sessions" in sys.argv and r["cost"] < 10:
@@ -211,8 +240,12 @@ def main():
                   "fails", r["engine_fails"], "match", r["books_match_lookup"],
                   *(["sessions", r["sessions_100bb"]] if "sessions_100bb" in r else []))
         print("engine failed classes", len(failed), failed)
-        return
-    print(json.dumps({"modes": results, "engine_failed_classes": failed}, indent=1))
+        print("engine critical tests", "PASS" if not critical else f"FAIL {critical}")
+        print("engine guidance", "ok" if not soft else soft)
+    else:
+        print(json.dumps({"modes": results, "engine_failed_classes": failed, "critical_fails": critical, "soft_warnings": soft}, indent=1))
+    if critical:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

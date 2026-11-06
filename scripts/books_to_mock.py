@@ -2,10 +2,11 @@
 
 For each mode in publish_files/index.json, draw book IDs from the lookup table by weight
 (with replacement). Picking uniformly from that list then follows the real math.
-Also stores one max-win book and one bonus book per mode for forced demo rounds.
+Also stores forced books per mode for demo rounds and the e2e replay suite: maxwin, bonus,
+and, from the drawn books, loss / win / big (categories of books_to_stories.categorize).
 
-Output: web-sdk/apps/seventh-veil/.mock-rgs/<mode>.json (git-ignored, skipped by sync.ps1).
-Usage (from stake\\): math-sdk\\env\\Scripts\\python.exe scripts\\books_to_mock.py [--spin N] [--buy N]
+Output: web-sdk/apps/<app>/.mock-rgs/<mode>.json (git-ignored, skipped by sync.ps1).
+Usage (from stake\\): math-sdk\\env\\Scripts\\python.exe scripts\\books_to_mock.py [--game <gameId>] [--spin N] [--buy N]
 """
 
 import json
@@ -15,10 +16,10 @@ import sys
 
 import zstandard as zstd
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GAME = "seventh_veil"
-PUB = os.path.join(ROOT, "math-sdk", "games", GAME, "library", "publish_files")
-OUT = os.path.join(ROOT, "web-sdk", "apps", "seventh-veil", ".mock-rgs")
+from books_to_stories import G, categorize  # G: the game from --game (default seventh_veil)
+
+PUB = str(G.publish)
+OUT = str(G.sdk_app / ".mock-rgs")
 
 
 def arg(name, default):
@@ -44,7 +45,15 @@ def main():
         n = spin_n if cost < 10 else buy_n
         ids = rng.choices([r[0] for r in rows], weights=[r[1] for r in rows], k=n)
         max_id = max(rows, key=lambda r: r[2])[0]
-        want = set(ids) | {max_id}
+        # Buy modes rarely draw a big win (>= 15x cost); then take the smallest one in the table.
+        pay = {r[0]: r[2] for r in rows}
+        big_pay = 15 * cost * 100
+        extra = []
+        if not any(big_pay <= pay[i] < pay[max_id] for i in ids):
+            big = [r for r in rows if big_pay <= r[2] < pay[max_id]]
+            if big:
+                extra.append(min(big, key=lambda r: r[2])[0])
+        want = set(ids) | {max_id} | set(extra)
         books, bonus_id = {}, None
         with open(os.path.join(PUB, mode["events"]), "rb") as fh:
             reader = zstd.ZstdDecompressor().stream_reader(fh)
@@ -64,17 +73,27 @@ def main():
                         books[book["id"]] = {"payoutMultiplier": book["payoutMultiplier"], "events": book["events"]}
                         if bonus_id is None and is_bonus and book["payoutMultiplier"] > 0:
                             bonus_id = book["id"]
+        forced = {"maxwin": max_id, "bonus": bonus_id}
+        # First drawn book per category (deterministic: rng seed 7). A mode without such a book
+        # (buy modes never lose) gets no key; the mock then draws at random.
+        want_cat = {"loss": ["loss"], "win": ["win", "win_below_cost"], "big": ["big_win", "big_bonus"]}
+        for key, cats in want_cat.items():
+            for cat in cats:
+                hit = next((i for i in ids + extra if categorize(books[i], cost) == cat), None)
+                if hit is not None:
+                    forced[key] = hit
+                    break
         data = {
             "mode": name,
             "cost": cost,
             "ids": ids,
-            "forced": {"maxwin": max_id, "bonus": bonus_id},
+            "forced": forced,
             "books": books,
         }
         path = os.path.join(OUT, f"{name}.json")
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, separators=(",", ":"))
-        print(f"{name}: {len(ids)} draws, {len(books)} books, {os.path.getsize(path) / 1e6:.1f} MB")
+        print(f"{name}: {len(ids)} draws, {len(books)} books, forced {forced}, {os.path.getsize(path) / 1e6:.1f} MB")
 
 
 if __name__ == "__main__":

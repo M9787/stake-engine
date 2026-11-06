@@ -174,8 +174,9 @@ def cover(img, size):
     return img.crop((left, top, left + w, top + h))
 
 
-def palette_pull(img, strength=PALETTE_PULL):
+def palette_pull(img, strength=None):
     """Move each pixel's hue toward the nearest palette hue. Returns (image, mean hue distance before)."""
+    strength = PALETTE_PULL if strength is None else strength
     arr = np.array(img.convert("RGBA"), dtype=np.float32) / 255
     rgb, a = arr[..., :3], arr[..., 3:]
     mx, mn = rgb.max(axis=2), rgb.min(axis=2)
@@ -579,8 +580,25 @@ def check(args):
     return 0
 
 
+def apply_theme(game_id):
+    """Take palette, glow and font colours from skins/<skin>/game.json "theme" (docs/10 section 2).
+    Fields the theme leaves out keep the defaults above (the Oracle style bible, docs/09)."""
+    global PALETTE, GLOW, PALETTE_PULL, GOLD_GRADIENT, STROKE_COLOR
+    sys.path.insert(0, os.path.join(ROOT, "tools", "gamedef"))
+    from gamectx import Game
+
+    theme = Game(game_id).gdef.get("theme", {})
+    PALETTE = theme.get("palette", PALETTE)
+    GLOW = theme.get("glow", GLOW)
+    PALETTE_PULL = theme.get("palettePull", PALETTE_PULL)
+    GOLD_GRADIENT = theme.get("fontGradient", GOLD_GRADIENT)
+    STROKE_COLOR = theme.get("fontStroke", STROKE_COLOR)
+    print(f"theme {game_id}: {len(PALETTE)} palette colours, pull {PALETTE_PULL}, glow {GLOW['color']}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--game", default="seventh_veil", help="game id whose game.json theme sets palette, glow and font colours")
     ap.add_argument("--check", action="store_true", help="self-test on generated samples (writes only to a temp folder)")
     ap.add_argument("--art", default=os.path.join(ROOT, "art_in"))
     ap.add_argument("--audio", default=os.path.join(ROOT, "audio_in"))
@@ -589,6 +607,8 @@ def main():
     ap.add_argument("--fallback-font", default=None, help="TTF for glyphs the main font lacks (e.g. ₹ ₩ ₱ ₽ ₺ ₫)")
     ap.add_argument("--no-rembg", action="store_true", help="black colour key instead of rembg")
     args = ap.parse_args()
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # glyph lists hold symbols cp1252 lacks
+    apply_theme(args.game)
     if shutil.which("ffmpeg") is None or shutil.which("ffprobe") is None:
         print("FAIL  ffmpeg/ffprobe not on PATH")
         return 1

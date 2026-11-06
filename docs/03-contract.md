@@ -47,13 +47,17 @@ Cluster-base handler `updateGlobalMult` stays for compatibility; Seventh Veil ma
 
 | Call | Request | Mock response |
 |---|---|---|
-| `POST /wallet/authenticate` | `sessionID`, `language` | `balance {amount, currency}`, `config {betLevels, defaultBetLevel, minBet, maxBet, stepBet, jurisdiction (all 12 flags)}`, open `round` if any |
-| `POST /wallet/play` | `sessionID`, `mode` (any case), `currency`, `amount` | debits `amount × mode cost` (all modes); `round {roundID, amount, payout, payoutMultiplier, costMultiplier, active, mode, event, state}`; `ERR_IPB` if balance is short, `ERR_VAL` for unknown mode, bet level not offered, or buy while `disabledBuyFeature` |
-| `POST /wallet/end-round` | `sessionID` | credits payout, `balance` |
-| `POST /bet/event` | `sessionID`, `event` | `{event}` |
+| `POST /wallet/authenticate` | `sessionID`, `language` | `balance {amount, currency}`, `config {betLevels, defaultBetLevel, minBet, maxBet, stepBet, gameModes [{mode, costMultiplier, maxBet}], jurisdiction (all 12 flags)}`, open `round` if any |
+| `POST /wallet/play` | `sessionID`, `mode` (any case), `currency`, `amount` | debits `amount × mode cost` (all modes); `round {roundID, amount, payout, payoutMultiplier, costMultiplier, active, mode, event, state}`; `ERR_IPB` if balance is short, `ERR_VAL` for unknown mode, bet level not offered, bet above the mode's maxBet, a round already open, or buy while `disabledBuyFeature`. Session tokens force errors: `paused` (423, no body), `act<n>` (429 `ERR_ACT` n times), `gen` (500 `ERR_GEN`), `gle` (`ERR_GLE`) |
+| `POST /wallet/end-round` | `sessionID` | credits payout, `balance`; `ERR_VAL` if no round is open |
+| `POST /mock/force` | `sessionID`, `next` | next play in that session uses the forced book of the played mode: `maxwin`, `bonus`, `loss`, `win`, `big` (`.mock-rgs/<mode>.json` `forced`, from `scripts\books_to_mock.py`; buy modes have no `loss`). Unknown key: random draw |
+| `POST /mock/reset` | `sessionID` | forgets the session (fresh balance, no open round) |
+| `POST /bet/event` | `sessionID`, `event` | `{event}`; stored as `round.event` (the game sends the book event index of each free spin) |
 | `GET /bet/replay/{game}/{version}/{mode}/{event}` | round ID as `event` | `{amount, payout, payoutMultiplier, costMultiplier, state}`; 404 `ERR_BNF` if unknown |
 
-Real-RGS points still unverified (need an Engine account): exact error body shape, mode-name case matching (PROJECT.md §11 Q9), whether the client or server multiplies buy-mode cost.
+Malformed JSON gets a plain-text `400 Bad Request`, like the RGS.
+
+Real-RGS points still unverified (need an Engine account): mode-name case matching (PROJECT.md §11 Q9), whether the client or server multiplies buy-mode cost.
 
 ## Verify
 

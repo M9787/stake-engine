@@ -5,7 +5,8 @@
 	import { EnableHotkey } from 'components-shared';
 	import { MainContainer } from 'components-layout';
 	import { App } from 'pixi-svelte';
-	import { stateModal } from 'state-shared';
+	import { stateBet, stateConfig, stateModal } from 'state-shared';
+	import { stateSession } from '../game/stateSession.svelte';
 
 	import { UiGameName } from 'components-ui-pixi';
 	import UI from './ui/UI.svelte';
@@ -36,10 +37,22 @@
 	import FreeSpinCounter from './FreeSpinCounter.svelte';
 	import FreeSpinOutro from './FreeSpinOutro.svelte';
 	import Transition from './Transition.svelte';
+	import skin from '$skin/skin.generated';
 
 	const context = getContext();
 
 	initBetModes();
+
+	// Dev server only (tools\e2e reads and sets game state). Removed from production builds.
+	if (import.meta.env.DEV) {
+		(globalThis as any).__sv = {
+			stateBet,
+			stateConfig,
+			stateModal,
+			stateSession,
+			isIdle: () => context.stateXstateDerived.isIdle(),
+		};
+	}
 
 	onMount(() => (context.stateLayout.showLoadingScreen = true));
 
@@ -92,7 +105,7 @@
 
 		<UI>
 			{#snippet gameName()}
-				<UiGameName name="ORACLE OF SEVENS" />
+				<UiGameName name={skin.rules.texts["game.name"] ?? skin.displayName.toUpperCase()} />
 			{/snippet}
 			<!-- Logo art comes with the final assets (instructions/19). Until then no second title:
 				it overlapped the game name at popout S 400x225 (Engine [195]). -->

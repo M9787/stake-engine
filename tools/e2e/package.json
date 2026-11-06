@@ -1,0 +1,12 @@
+{
+  "name": "stake-e2e",
+  "private": true,
+  "description": "End-to-end gate for Stake Engine games: runs the game against the local mock RGS (docs/10 M6c/M6e).",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0"
+  }
+}

@@ -1,12 +1,21 @@
 <script lang="ts" module>
-	// RGS status codes (rgs-fetcher schema) -> player message. Raw error JSON is never shown.
+	// RGS codes -> player message. Raw error JSON is never shown.
+	// Engine codes (stake-engine.com/docs/rgs/wallet "Response codes", 2026-11-06): ERR_VAL, ERR_IPB,
+	// ERR_GLE (400), ERR_ACT (429, retried by src/overrides/rgsFetcher.ts first), ERR_GEN (500).
+	// ERR_PAUSED / ERR_RATE / ERR_BAD_REQUEST / ERR_NETWORK / ERR_NOT_FOUND are our names for
+	// answers without an ERR_* body (423, 429 demo, plain 400, no connection, 404).
 	const MESSAGES: Record<string, { text: string; closable: boolean }> = {
 		ERR_IPB: { text: 'Insufficient balance. Lower your bet or add funds.', closable: true },
-		ERR_VAL: { text: 'That bet is not available. Please choose another bet.', closable: true },
-		ERR_IS: { text: 'Your session has expired. Please reload the game.', closable: false },
-		ERR_ATE: { text: 'Your session has expired. Please reload the game.', closable: false },
-		ERR_GLE: { text: 'Gambling limit reached.', closable: false },
+		ERR_VAL: { text: 'This request was not accepted. If it happens again, please reload the game.', closable: true },
+		ERR_GLE: { text: 'Gambling limit reached.', closable: true },
+		ERR_ACT: { text: 'The server is busy. Please try again in a moment.', closable: true },
+		ERR_RATE: { text: 'Too many requests. Please wait a moment and try again.', closable: true },
+		ERR_PAUSED: { text: 'New rounds are paused for maintenance. Please try again later.', closable: true },
+		ERR_GEN: { text: 'Server error. Please reload the game to finish any open round.', closable: false },
+		ERR_BAD_REQUEST: { text: 'The request could not be processed. Please reload the game.', closable: false },
 		ERR_REPLAY: { text: 'This replay could not be loaded.', closable: false },
+		ERR_NOT_FOUND: { text: 'This replay could not be found.', closable: false },
+		ERR_BNF: { text: 'This replay could not be found.', closable: false },
 	};
 	const FALLBACK = { text: 'Connection problem. Please reload the game.', closable: false };
 

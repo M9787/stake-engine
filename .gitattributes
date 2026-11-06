@@ -1,0 +1,3 @@
+# Frozen math artifacts are hashed byte for byte (golden.lock.json). Never convert line endings.
+skins/**/math/** -text
+skins/**/golden.lock.json -text

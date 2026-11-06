@@ -1,0 +1,146 @@
+{
+ "game": "seventh_veil",
+ "pins": {
+  "python": "3.12.9",
+  "zstandard": "0.23.0",
+  "num_threads": 10,
+  "batching_size": 50000,
+  "num_sim_args": {
+   "base": 100000,
+   "omen": 100000,
+   "prophecy": 100000,
+   "star": 100000,
+   "tower": 100000
+  },
+  "PYTHONHASHSEED": "0"
+ },
+ "hash_randomization": 0,
+ "files": {
+  "configs/books_base.verification.json": {
+   "raw": "bd7bbd52d2f2042ee08dc836ac47b5d4ecc2c7a60e4542f82a6eb8eee56c8227"
+  },
+  "configs/books_omen.verification.json": {
+   "raw": "e0ca57287bc8533008fa1f92c9bf80f821fe153384b90ba203366e0bf0db358d"
+  },
+  "configs/books_prophecy.verification.json": {
+   "raw": "65ec26b5d7b93fbc88a2ec45ed10e25dc783d60f286e88cc912d71aff24b7196"
+  },
+  "configs/books_star.verification.json": {
+   "raw": "f11e33f18fc88422b5a74ced9a4fff650d132d1b761a8aa6b8f3d5b77072bdea"
+  },
+  "configs/books_tower.verification.json": {
+   "raw": "f1783156cbaba439443b3de402a9957bf4e7594a4167bccf265beb8c816b42ff"
+  },
+  "configs/config.json": {
+   "raw": "f94615d746d61fc545d396484695aed2096362b493a9625477ddd06e3fa2094d"
+  },
+  "configs/config_fe_seventh_veil.json": {
+   "raw": "89b16b26e77f6097458a4e3e328f67cc48c66a82ce8fa3cb5b938d301383d833"
+  },
+  "configs/event_config_base.json": {
+   "raw": "d585754927e3bd2ff496081f786fd3e011fd549bd7c2730f75a13fd1b05482ba"
+  },
+  "configs/event_config_omen.json": {
+   "raw": "951e7736afa57406b8a52fb51648f326ce3363c9df1114c7fb19045c1ab7222a"
+  },
+  "configs/event_config_prophecy.json": {
+   "raw": "703dcc32c39eaabc17bb0d0130eb1e3be6dd26859b7706e78ad333002b84c591"
+  },
+  "configs/event_config_star.json": {
+   "raw": "e5307e6a927333adb0ed69fe34bd7b04d804ab7aa892f7613698fced1d112f0d"
+  },
+  "configs/event_config_tower.json": {
+   "raw": "c19b45ac3089a9c62418044bf4ba1cf2c9f0bad07014e6b502533a65480bac66"
+  },
+  "configs/math_config.json": {
+   "raw": "aa19cbd3fd723ee2027744f2a23514aca9d66de1467629e1fe22270e32d5032d"
+  },
+  "forces/force.json": {
+   "raw": "42d5e3133e8ff73bf5e308ab73a917194a1bdf11fce02eb7772d1ea82e6dcc7e",
+   "normalized": "8d09ed994f1c260f0efe576c3bf7ac759a3961085c40e8b4a8a4843532bfc944"
+  },
+  "forces/force_record_base.json": {
+   "raw": "1eb038637e0810ae37281b41c883e24bf3aebd9a477d05c2dc40b8169b9ffa53",
+   "normalized": "f7e3cc9351cc67ee9e20f689fa5b1ea289d624a5fba7121a13956bead6af0212"
+  },
+  "forces/force_record_omen.json": {
+   "raw": "3708d2a62d79af848cfe8c8e6d8111149fb2279e4a482e95b5626304f464c9fc",
+   "normalized": "2c14ebe27172ef445e8d1a37bfee67cc08ae12ee1a6cec6701f329ee03816746"
+  },
+  "forces/force_record_prophecy.json": {
+   "raw": "b17d908057d6eaeb8741b33d7aabec8a2032eb628e83c26a446af4269ab12c3c",
+   "normalized": "11a5b06d1a620f28a4fdac8afb679089452c213ec858038ce69de6730d6a46aa"
+  },
+  "forces/force_record_star.json": {
+   "raw": "42ea68e5f3f512a517e1104dc4315c0bde7e9e4e7bceaed9b65a60d94fa9278b",
+   "normalized": "6e41cf9fc746c0be47a6031a7fb183bb0dea20c6f4a1ea2724572b5b9443e167"
+  },
+  "forces/force_record_tower.json": {
+   "raw": "090e689dbb053c80cce5136d3c2b2af94093c7ad9e57a1b1247cf68601c45236",
+   "normalized": "e1e58c7f34ff0590e321b92d94a41c559a1977fb13140c840082cdfe9de469db"
+  },
+  "lookup_tables/lookUpTableSegmented_base.csv": {
+   "raw": "92925ebb79175b4c3aeacc7a50469e4c4f7c824fbd70583dd15bbff187b9b708"
+  },
+  "lookup_tables/lookUpTableSegmented_omen.csv": {
+   "raw": "2402d036a0e305377d368f1fee3eaa68021f0ca3a1b4be980c41dac860edfe15"
+  },
+  "lookup_tables/lookUpTableSegmented_prophecy.csv": {
+   "raw": "fb0bc97be07c1831a2930356061b0b25f2a43be44e1520f09bb71c57a65d1367"
+  },
+  "lookup_tables/lookUpTableSegmented_star.csv": {
+   "raw": "63da801a3eb374cb73e1b8336e3f29c7de713386478608da57c223ab3c1d03e5"
+  },
+  "lookup_tables/lookUpTableSegmented_tower.csv": {
+   "raw": "7b83906407b045fbe7308dc842294db242cb3812c63d86a6e63e4c3761b48080"
+  },
+  "lookup_tables/lookUpTable_base.csv": {
+   "raw": "58115c8c5888f148b61456c0198b522d5a1869b46df5d6ad6743e465f40c9e7c"
+  },
+  "lookup_tables/lookUpTable_omen.csv": {
+   "raw": "40e12031e5afcfe8385a4e3bce73eb80d0e61e32d3b3aab131dbce31b04bfd8e"
+  },
+  "lookup_tables/lookUpTable_prophecy.csv": {
+   "raw": "7aae59e1910f9d20831b24cfd7faf9c16bda6425fbca7af786eff3350074f54e"
+  },
+  "lookup_tables/lookUpTable_star.csv": {
+   "raw": "f1e01093e5509b56c374c237247d22331b64e936a760668d20b4a3dd6ebeeeb1"
+  },
+  "lookup_tables/lookUpTable_tower.csv": {
+   "raw": "852fa966999dc1f9fbf9a7f233e73e36b398986e9a5cdba27c0ccbb681543ea7"
+  },
+  "publish_files/books_base.jsonl.zst": {
+   "decompressed": "1a568d34fde13a3f96aefe647ddb7bf195d0054b6c1eff6d5ff371045b2cca07"
+  },
+  "publish_files/books_omen.jsonl.zst": {
+   "decompressed": "c6abbc46faeb34f7ce4e04d49dec50ea52e350661097479acdd3a99d300e5cb5"
+  },
+  "publish_files/books_prophecy.jsonl.zst": {
+   "decompressed": "c51d04a8455e5f318fb2e7a722f09c52f9b8d1bc97d16466613b0855124b76c7"
+  },
+  "publish_files/books_star.jsonl.zst": {
+   "decompressed": "13e62a0a7044212f8e1022df6ae54c875143a6b5edc5b248f6bd25cd7ee24560"
+  },
+  "publish_files/books_tower.jsonl.zst": {
+   "decompressed": "758d062816554e1340952e0ae197285b656a2e8bc439e55b585c8ddde7456cf1"
+  },
+  "publish_files/index.json": {
+   "raw": "09da603ce93c3b83551b07f6affa098265852efeab597f72cd463d406b248a77"
+  },
+  "publish_files/lookUpTable_base_0.csv": {
+   "raw": "0ed04e4361e06760692620422cbe4955df87327723fa10a12d6475203b5664ac"
+  },
+  "publish_files/lookUpTable_omen_0.csv": {
+   "raw": "5a86956e56fc887d51fb1934c0bf73757dc30a89d574885c99545b94f51b65a9"
+  },
+  "publish_files/lookUpTable_prophecy_0.csv": {
+   "raw": "6a33f3dbf874fe073a26157c4733e0810d9c0fb38004e4689969fbd68c099b8b"
+  },
+  "publish_files/lookUpTable_star_0.csv": {
+   "raw": "4e865c9ae3b7f8f5e284bef54f6772ebc4318b19e3d438e209b92a8e3660ccbf"
+  },
+  "publish_files/lookUpTable_tower_0.csv": {
+   "raw": "3710742ec61dd7f64d50e20bf73d92305204d102e76bf91e633f1be12b3a1a36"
+  }
+ }
+}

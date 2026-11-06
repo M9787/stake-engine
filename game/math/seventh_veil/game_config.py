@@ -96,6 +96,8 @@ class GameConfig(Config):
         # Star bonus starts with a few charged spots too (iteration 4): lifts the weak end of
         # the Star distribution so fewer Star buys return a small fraction of their price.
         self.star_precharge_spots = 5
+        # Own value since M6b (was read from tower_precharge_value; same 2, output unchanged).
+        self.star_precharge_value = 2
         # Buy floor (task 11, 2026-10-28): bought bonuses that pay less than this (x base bet) are
         # re-simulated, so the outcome pool holds no near-empty buys. Star 10x of 100x, Tower 40x of 400x.
         self.buy_floor = {"star": 10.0, "tower": 40.0}

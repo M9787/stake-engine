@@ -1,9 +1,9 @@
 """Turn math books into Storybook data + stories, and check the math<->web contract.
 
-  books_to_stories.py            write stories for base / star / tower from publish_files books
+  books_to_stories.py            write stories for the 1x mode and each buy mode from publish_files books
   books_to_stories.py --check    only compare book event types with bookEventHandlerMap.ts keys
 
-Usage (from stake\\): math-sdk\\env\\Scripts\\python.exe scripts\\books_to_stories.py [--check]
+Usage (from stake\\): math-sdk\\env\\Scripts\\python.exe scripts\\books_to_stories.py [--game <gameId>] [--check]
 Exit code 1 if any book event type has no handler.
 """
 
@@ -16,14 +16,24 @@ import sys
 import zstandard as zstd
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PUB = os.path.join(ROOT, "math-sdk", "games", "seventh_veil", "library", "publish_files")
-APP = os.path.join(ROOT, "game", "web", "seventh-veil", "src")
-HANDLERS = os.path.join(APP, "game", "bookEventHandlerMap.ts")
-STORIES = os.path.join(APP, "stories")
+sys.path.insert(0, os.path.join(ROOT, "tools", "gamedef"))
+from gamectx import Game, game_arg  # noqa: E402
 
-# mode -> (bet mode key in the web app, cost in base bets)
-MODES = {"base": ("BASE", 1.0), "star": ("STAR", 100.0), "tower": ("TOWER", 400.0)}
-MAX_PAYOUT = 7777700  # 77,777x in lookup units
+G = Game(game_arg())
+PUB = str(G.publish)
+# Stories and handlers live in the legacy app until M10, then in the core app with data in build/<id>/web.
+APP = str(G.web_src) if G.web_src else os.path.join(ROOT, "core", "web", "cluster-tumble", "src")
+HANDLERS = os.path.join(APP, "game", "bookEventHandlerMap.ts")
+STORIES = os.path.join(APP, "stories") if G.web_src else str(G.gen_web / "stories")
+
+ALL_MODES = [m["name"] for m in G.gdef["modes"]]
+# Stories: the 1x spin mode plus every buy mode. mode -> (bet mode key in the web app, cost in base bets)
+MODES = {
+    m["name"]: (m["name"].upper(), float(m["cost"]))
+    for m in G.gdef["modes"]
+    if m["kind"] == "buy" or float(m["cost"]) == 1.0
+}
+MAX_PAYOUT = round(G.gdef["math"]["wincap"] * 100)  # wincap in lookup units
 MAX_SCAN = 20000  # books scanned per mode when sampling
 
 
@@ -45,7 +55,7 @@ def handler_keys():
 def check():
     keys = handler_keys()
     seen = set()
-    for mode in ("base", "omen", "prophecy", "star", "tower"):
+    for mode in ALL_MODES:
         for book in iter_books(mode):
             seen.update(ev["type"] for ev in book["events"])
     missing = sorted(seen - keys)

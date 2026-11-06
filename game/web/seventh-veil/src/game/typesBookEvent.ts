@@ -101,11 +101,11 @@ type BookEventFreeSpinRetrigger = {
 	positions: Position[];
 };
 
-// seventh veil
+// cluster_tumble core events
 type BookEventBonusVariant = {
 	index: number;
 	type: 'bonusVariant';
-	variant: 'star' | 'tower';
+	variant: string; // id from game.json features.bonusVariants
 };
 
 type BookEventWincap = {
@@ -137,7 +137,7 @@ export type BookEvent =
 	// new
 	| BookEventUpdateGrid
 	| BookEventFreeSpinRetrigger
-	// seventh veil
+	// cluster_tumble core events
 	| BookEventBonusVariant
 	| BookEventWincap
 	// customised

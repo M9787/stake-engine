@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "core": { "family": "cluster_tumble", "version": "0.1.0" },
+  "identity": {
+    "gameId": "seventh_veil",
+    "displayName": "Oracle of Sevens",
+    "workingName": "Seventh Veil",
+    "providerName": "seventh_veil_studio",
+    "providerNumber": 0,
+    "version": "1.0.0"
+  },
+  "board": { "reels": 7, "rows": 7, "includePadding": true },
+  "symbols": [
+    { "id": "H1", "role": "pay", "tier": "high", "nameKey": "symbol.H1" },
+    { "id": "H2", "role": "pay", "tier": "high", "nameKey": "symbol.H2" },
+    { "id": "H3", "role": "pay", "tier": "high", "nameKey": "symbol.H3" },
+    { "id": "H4", "role": "pay", "tier": "high", "nameKey": "symbol.H4" },
+    { "id": "L1", "role": "pay", "tier": "low", "nameKey": "symbol.L1" },
+    { "id": "L2", "role": "pay", "tier": "low", "nameKey": "symbol.L2" },
+    { "id": "L3", "role": "pay", "tier": "low", "nameKey": "symbol.L3" },
+    { "id": "L4", "role": "pay", "tier": "low", "nameKey": "symbol.L4" },
+    { "id": "S", "role": "scatter", "nameKey": "symbol.S" },
+    { "id": "W", "role": "wild", "nameKey": "symbol.W" }
+  ],
+  "paytable": {
+    "bands": [[5, 5], [6, 8], [9, 12], [13, 49]],
+    "pays": {
+      "H1": [5.0, 12.5, 30.0, 150.0],
+      "H2": [3.0, 6.0, 12.0, 60.0],
+      "H3": [2.5, 4.5, 8.0, 40.0],
+      "H4": [2.0, 3.5, 6.0, 25.0],
+      "L1": [1.6, 2.5, 4.0, 12.0],
+      "L2": [1.4, 2.0, 3.5, 10.0],
+      "L3": [1.2, 1.8, 2.5, 6.0],
+      "L4": [1.2, 1.8, 2.5, 6.0]
+    },
+    "minPay": 1.2
+  },
+  "reels": { "files": { "BR0": "BR0.csv", "FR0": "FR0.csv", "WCAP": "WCAP.csv" } },
+  "freespinTriggers": {
+    "basegame": { "3": 12, "4": 15, "5": 15, "6": 18, "7": 18, "8": 18 },
+    "freegame": { "3": 5, "4": 5, "5": 5, "6": 5, "7": 5, "8": 5 }
+  },
+  "features": {
+    "gridMultiplier": { "enabled": true, "cap": 1024, "scope": "spin" },
+    "bonusVariants": [
+      { "id": "star", "scatterMin": 3, "scatterMax": 4, "precharge": { "spots": 5, "value": 2 }, "buyFloor": 10.0 },
+      { "id": "tower", "scatterMin": 5, "scatterMax": 49, "precharge": { "spots": 12, "value": 2 }, "buyFloor": 40.0 }
+    ]
+  },
+  "reelWeights": {
+    "fg": { "basegame": { "BR0": 1 }, "freegame": { "FR0": 1 } },
+    "cap": { "basegame": { "BR0": 1 }, "freegame": { "FR0": 1, "WCAP": 5 } },
+    "baseOnly": { "basegame": { "BR0": 1 } }
+  },
+  "modes": [
+    { "name": "base", "kind": "spin", "cost": 1.0, "quotas": { "wincap": 0.001, "freegame": 0.1, "zero": 0.45, "basegame": 0.449 },
+      "scatterTriggers": { "wincap": { "5": 1, "6": 1 }, "freegame": { "3": 20, "4": 6, "5": 2, "6": 1 } } },
+    { "name": "omen", "kind": "spin", "cost": 1.25, "quotas": { "wincap": 0.001, "freegame": 0.2, "zero": 0.45, "basegame": 0.349 },
+      "scatterTriggers": { "wincap": { "5": 1, "6": 1 }, "freegame": { "3": 20, "4": 6, "5": 2, "6": 1 } } },
+    { "name": "prophecy", "kind": "spin", "cost": 2.0, "quotas": { "wincap": 0.001, "freegame": 0.3, "zero": 0.40, "basegame": 0.299 },
+      "scatterTriggers": { "wincap": { "5": 1, "6": 1 }, "freegame": { "3": 20, "4": 6, "5": 2, "6": 1 } } },
+    { "name": "star", "kind": "buy", "variant": "star", "cost": 100.0, "quotas": { "wincap": 0.001 },
+      "scatterTriggers": { "all": { "3": 5, "4": 2 } } },
+    { "name": "tower", "kind": "buy", "variant": "tower", "cost": 400.0, "quotas": { "wincap": 0.002 },
+      "scatterTriggers": { "all": { "5": 3, "6": 1 } } }
+  ],
+  "math": {
+    "rtp": 0.965,
+    "wincap": 77777.0,
+    "sims": { "base": 100000, "omen": 100000, "prophecy": 100000, "star": 100000, "tower": 100000 },
+    "run": { "threads": 10, "rustThreads": 20, "batching": 50000 },
+    "targets": {
+      "base": { "kind": "spin", "wincapRtp": 0.010, "freegameRtp": 0.324, "bonusOneIn": 400, "basegameRtp": 0.631, "hitOneIn": 4.0,
+        "midWinLift": [4.0, 15.0], "baseScaling": [[[1, 3], 4.0], [[3, 6], 2.0]] },
+      "omen": { "kind": "spin", "wincapRtp": 0.008, "freegameRtp": 0.507, "bonusOneIn": 150, "basegameRtp": 0.450, "hitOneIn": 5.0,
+        "midWinLift": [2.0, 4.0], "baseScaling": [[[1, 1.25], 0.2], [[1.25, 3], 8.0], [[3, 6], 3.0]] },
+      "prophecy": { "kind": "spin", "wincapRtp": 0.006, "freegameRtp": 0.509, "bonusOneIn": 80, "basegameRtp": 0.450, "hitOneIn": 4.0,
+        "midWinLift": [2.0, 4.0], "baseScaling": [[[1, 2], 0.2], [[2, 4], 8.0], [[4, 8], 3.0]] },
+      "star": { "kind": "buy", "wincapRtp": 0.005, "freegameRtp": 0.960, "minM2m": 1.0, "maxM2m": 2.0,
+        "scaling": [[[10, 20], 0.05], [[20, 50], 0.25], [[50, 200], 5.0], [[200, 1000], 0.7], [[5000, 77776], 0.5]],
+        "reshape": { "split": 60, "belowMass": 0.495, "hiFrom": 100 } },
+      "tower": { "kind": "buy", "wincapRtp": 0.0004, "freegameRtp": 0.9646, "minM2m": 4, "maxM2m": 8,
+        "scaling": [[[20, 50], 0.9], [[5000, 77776], 0.5]] }
+    }
+  },
+  "theme": {
+    "palette": {
+      "deep_indigo": "#1B1446", "veil_violet": "#5B2A86", "antique_gold": "#D4A845",
+      "moon_silver": "#C9CED6", "ember_red": "#B3362C", "night_black": "#0A0812"
+    },
+    "palettePull": 0.35,
+    "glow": { "color": "#D4A845", "radius": 6, "strength": 0.55 },
+    "fontGradient": ["#F6E3A1", "#D4A845", "#8A6420"],
+    "fontStroke": "#2A1A08"
+  },
+  "review": {
+    "signatureMoment": "Veil tear: the charged grid doubles spots up to x1024 and persists through the whole bonus.",
+    "originality": ["7x7 cluster tumble with persistent charged grid", "two bonus variants chosen by scatter count (Star / Tower) with pre-charged spots"],
+    "artSignoff": null
+  }
+}

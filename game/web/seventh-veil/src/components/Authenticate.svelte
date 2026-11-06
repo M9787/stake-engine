@@ -90,6 +90,20 @@
 					socialCasino: !!cfg.jurisdiction?.socialCasino || stateUrlDerived.social(),
 				} as typeof stateConfig.jurisdiction;
 				stateConfig.betAmountOptions = betLevels(cfg).map((level) => level / API_AMOUNT_MULTIPLIER);
+				stateSession.allBetLevels = [...stateConfig.betAmountOptions];
+				// config.gameModes: [{ mode, costMultiplier, maxBet }]. Each mode has its own maxBet
+				// (base bet, API units); EnableJurisdiction caps the bet levels per active mode.
+				const gameModes: unknown = cfg.gameModes;
+				const modeList = Array.isArray(gameModes)
+					? gameModes
+					: gameModes && typeof gameModes === 'object'
+						? Object.entries(gameModes).map(([mode, value]) => ({ mode, ...(value as object) }))
+						: [];
+				stateSession.modeMaxBet = Object.fromEntries(
+					modeList
+						.filter((m: any) => typeof m?.mode === 'string' && Number(m?.maxBet) > 0)
+						.map((m: any) => [m.mode.toUpperCase(), Number(m.maxBet) / API_AMOUNT_MULTIPLIER]),
+				);
 				if (cfg.defaultBetLevel && stateConfig.betAmountOptions.length) {
 					const wanted = cfg.defaultBetLevel / API_AMOUNT_MULTIPLIER;
 					stateBet.betAmount = stateConfig.betAmountOptions.reduce((best, level) =>

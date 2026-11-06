@@ -29,12 +29,17 @@ Status 2026-10-28: `[x]` verified, `[ ]` open. `(code)` = implemented, not yet v
 - [ ] Ante and buy trade-offs stated plainly: ante wins often return less than the spin price; a bonus can pay less than its price. (code: rules screen + bet-mode dialogs)
 
 ### Bets and balance (RGS)
-- [x] [219] Balance and wins formatted per currency: USD EUR CAD MXN JPY XSC XGC (`src/overrides/formatAmount.ts`, `scripts\check_amount.ts` OK; JPY no decimals; SC/GC suffix [78]).
+- [x] [219] Balance and wins formatted per currency: all 85 codes of the Engine table (symbol, decimals, placement), unknown codes as `10.00 ABC` (`src/overrides/formatAmount.ts`; `scripts\check_amount.ts` OK 97 checks, 2026-11-06; SC/GC suffix [78]).
 - [x] [242] Only bet levels from `authenticate`; min and max reachable (interception test 1.00–2.00, Run 2).
 - [x] [222] No play request without balance for the real mode cost; message shown (`game/actor.ts` guard).
 - [x] Starting bet = `defaultBetLevel`; if `betLevels` is missing, levels follow `minBet`..`maxBet` in `stepBet` steps. (our `Authenticate.svelte`; demo starts at $1.00)
 - [x] [273] Sub-cent wins keep their digits ($0.004, $0.012 in `check_amount.ts`). Recheck on Engine with the real levels.
-- [ ] RGS errors show a player message, never raw JSON: `ERR_IPB`, `ERR_IS`, `ERR_ATE`, `ERR_GLE`, `ERR_VAL`. (code: our `ModalError.svelte`)
+- [x] RGS errors show a player message, never raw JSON: `ERR_VAL`, `ERR_IPB`, `ERR_GLE`, `ERR_ACT` (retried 3× first), `ERR_GEN`, plain 400, 423 paused, 429, no connection. (code: `ModalError.svelte`, `src/overrides/rgsFetcher.ts`; mock tokens `paused`, `act<n>`, `gen`, `gle`) (e2e `tools\e2e\tests\m6c.spec.ts` pass 2026-11-06)
+- [x] Per-mode `maxBet` from `config.gameModes`: a mode offers only levels up to its maxBet. (code: `Authenticate.svelte`, `EnableJurisdiction.svelte`; mock token `maxbuy<dollars>`) (e2e `tools\e2e\tests\m6c.spec.ts` pass 2026-11-06)
+- [x] Bonus resume: `/bet/event` records each free spin; a reload mid-bonus resumes from it. (code: `src/game/roundProgress.ts`) (e2e `tools\e2e\tests\m6c.spec.ts` pass 2026-11-06)
+- [x] `social=true` forces English (`vite.patches.js` lang patch). (e2e `tools\e2e\tests\m6c.spec.ts` pass 2026-11-06)
+- [x] Board bottom row clear of the HUD at 1280x720, 1200x675, 400x225, 425x812 (`tools\e2e\tests\shots.spec.ts`, 2026-11-06).
+- [x] `prefers-reduced-motion` starts in turbo, unless `disabledTurbo` (`EnableJurisdiction.svelte`; e2e pass 2026-11-06).
 - [x] Only `rgs_url` from the query string is called. No other host (`check_external_urls.ps1` exit 0).
 - [x] [274] Invalid `rgs_url` shows "Connection problem. Please reload the game." (Run 2).
 - [x] [240] Unsupported `lang` (`xx`, `en_US`, empty, `zh`) falls back to English, 0 console errors (`vite.patches.js`).
@@ -107,6 +112,8 @@ All boxes checked. Any unchecked box → PROJECT.md §11 row with owner.
 | URL | Proves | Checked |
 |---|---|---|
 | https://stake-engine.com/docs/approval-guidelines | stateless, math frozen, no sample assets | 2026-09-19 |
+| https://stake-engine.com/docs/rgs | currency table, sub-cent win decimals, resume via `/bet/event` | 2026-11-06 |
+| https://stake-engine.com/docs/rgs/wallet | response codes, `gameModes[].maxBet` | 2026-11-06 |
 | https://stake-engine.com/docs/approval-guidelines/front-end-communication | disclosure, controls, win count-up | 2026-09-19 |
 | https://stake-engine.com/docs/approval-guidelines/game-replay-requirements | replay | 2026-09-19 |
 | https://stake-engine.com/docs/approval-guidelines/game-tile-requirements | tile | 2026-09-19 |

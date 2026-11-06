@@ -127,6 +127,73 @@ Book sizes (bytes ÷ 10⁶ = MB): base 46.7 MB, omen 73.1 MB, prophecy 100.1 MB,
 5. **Sample size.** 100k sims cannot resolve 1-in-10M events. Max-win odds come from optimizer weights on forced max-win books.
 6. **Optimizer runs vary.** The same settings gave star P(<20x) 3.9% and 4.8% in two runs. Recheck `math_stats.py` after every optimizer run.
 
+## Final retune (M6b, 2026-11-06)
+
+Owner targets (PROJECT.md Q28):
+- star buy median ~60×
+- omen and prophecy: more spins pay above their cost; the bonus stays the main draw
+
+Books were not changed: the optimizer re-ran on the existing books (`SV_SKIP_SIMS=1`). Base and tower weights are untouched.
+
+| Mode | Metric | Before (2026-10-28) | After |
+|---|---|---|---|
+| star | median | 43.4× | **64.1×** |
+| star | buys paying > price | 35.1% | 40.7% |
+| star | buys < 20× | 4.8% | 1.9% |
+| star | p90 | 261× | 187× |
+| omen | spins paying > cost | 1.6% | **20.2%** |
+| omen | median session (100 bets) | 223 | 233 |
+| prophecy | spins paying > cost | 2.7% | **5.0%** |
+| prophecy | hit rate | 34.6% | 26.3% |
+| prophecy | median session | 138 | 159 |
+| all | RTP | 96.50% | 96.50% |
+| all | failed classes | 0 | 0 |
+| all | Engine critical tests | — | PASS |
+
+**What changed** (`game_optimization.py`):
+1. **omen / prophecy:** 0.05 RTP moved from the bonus into base wins. Bonus odds stay 1 in 150 / 1 in 80, so the dialog texts stay true. Per-mode base scaling (`BASE_SCALING`) damps wins below the spin price and lifts wins just above it.
+2. **prophecy:** base hit rate changed from 1 in 3 to 1 in 4. At 1 in 3, the average hit was 2.7× bet against a 2× cost.
+   - 1 in 5 did worse (4.7%).
+   - The best of 3 optimizer runs was kept: 4.1%, 5.0%, 4.5%.
+3. **star:** scaling alone cannot raise the median. The optimizer builds its "low" candidates from [min, mean/2] (`optimization_program/src/main.rs:1112-1130`), which pins the median just below mean/2 ≈ 48×. Iterations 1–4 gave 45–47×.
+   - Fix: `reshape.py`, a deterministic post-optimizer step. It sets P(<60×) = 0.495, then solves the 60–100× and 100×+ masses so the mean stays exactly 96.5×. Each band keeps its inner shape, and the wincap rows are not touched.
+   - It also fills the optimizer's 50–100× hole: 60–100× went from 2.4% to 9.8% of buys.
+   - `hi_from` = 200 was infeasible: only 4.6% of star weight is above 200×.
+4. **star_precharge_value** now has its own config value (2, the same as before). Its sims proof is in `build\seventh_veil\m6b_split_proof.log`.
+
+**Frozen weights:** `skins\oracle-of-sevens\math\lookups\lookUpTable_<mode>_0.csv`. Rebuild with `SV_REUSE_WEIGHTS` (PROJECT.md §7). From here on the optimizer never re-runs for Oracle.
+
+**Optimizer time on this PC:** about 70 s per mode (220 s for 3 modes) with books reused.
+
+## Determinism (M6a, 2026-11-06)
+
+**Books are reproducible.** Two sims-only runs with the same pins gave identical hashes for every file in `publish_files` (books after zstd decompression, weights, `index.json`), `lookup_tables`, `forces` and the configs.
+- Pins: `PYTHONHASHSEED=0`, Python 3.12.9, zstandard 0.23.0, 10 threads, batching 50,000, 100k sims per mode.
+- Tool: `tools\golden\snapshot.py`. Both runs: `build\seventh_veil\det_run1.log`, `det_run2.log`.
+- The run kept the published weights. `lookUpTable_*_0.csv` matched the pre-run backup byte for byte, and the format checks reported "payout hash OK" for every mode.
+
+**Optimizer weights are not reproducible.** `math-sdk\optimization_program\src\main.rs` uses `thread_rng()`. So weights are frozen artifacts: rebuild with `SV_REUSE_WEIGHTS` (PROJECT.md §7). Do not re-optimize.
+
+**Excluded from the comparison: `configs\event_config_<mode>.json`.** Every sim thread rewrites it (`math-sdk\src\state\state.py:289`), so the last thread to finish wins. In this check, star and tower differed between the two runs. It is a sample-event dump and is not published.
+
+**Wall time on this PC (sims + format checks, optimizer skipped, 5 modes × 100k):**
+
+| Run | Time | Load |
+|---|---|---|
+| 1 | 1,458 s (24.3 min) | alone |
+| 2 | 1,117 s (18.6 min) | partly alongside a web build |
+
+The 340 s gap between the runs is not explained; treat ~20–25 min as the expected range. Optimizer time per mode is measured in M6b.
+
+## Core rebuild (M8, 2026-11-07)
+
+**The core shim rebuilds the golden byte for byte.** Full run through `math-sdk\games\seventh_veil\run.py` (generated shim: `core\math\cluster_tumble` + `skins\oracle-of-sevens\game.json`) with `PYTHONHASHSEED=0` and `CT_REUSE_WEIGHTS=skins\oracle-of-sevens\math\lookups`.
+- `snapshot.py seventh_veil --verify skins\oracle-of-sevens\golden.lock.json`: IDENTICAL, 40 files, same pins.
+- `math_stats.py seventh_veil --brief --sessions --json`: byte-identical before and after (`build\seventh_veil\m8_before_stats.json`, `m8_after_stats.json`).
+- Format checks: SHA-256 OK and payout hash OK for all 5 modes. Log: `build\seventh_veil\m8_full.log`.
+- Wall time: 8.2 min (books 487 s). Peak RAM about 13 GB across 17 Python processes.
+- Fix needed on the way: `config_builder.build()` now sets `GameConfig.__module__` to the shim module. Without it, Windows spawn workers failed with `Can't pickle <class 'games.core_cluster_tumble.config_builder.GameConfig'>`. `quick_books.py` runs in one process and did not catch it.
+
 ## Verify
 
 ```powershell

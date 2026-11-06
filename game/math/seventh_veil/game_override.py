@@ -27,15 +27,16 @@ class GameStateOverride(GameExecutables):
         self.reset_grid_mults()
         bonus_variant_event(self, self.bonus_variant)
         if self.bonus_variant == "tower":
-            self.precharge_grid(self.config.tower_precharge_spots)
+            self.precharge_grid(self.config.tower_precharge_spots, self.config.tower_precharge_value)
         elif self.bonus_variant == "star":
-            self.precharge_grid(self.config.star_precharge_spots)
+            self.precharge_grid(self.config.star_precharge_spots, self.config.star_precharge_value)
 
-    def precharge_grid(self, count):
-        """Bonus starts with `count` random spots already charged, persistent for the bonus."""
+    def precharge_grid(self, count, value):
+        """Bonus starts with `count` random spots charged at `value`, persistent for the bonus.
+        Same random.sample call as before (RNG order unchanged, M6b proof in docs/07)."""
         spots = [(r, c) for r in range(self.config.num_reels) for c in range(self.config.num_rows[r])]
         for reel, row in random.sample(spots, count):
-            self.position_multipliers[reel][row] = self.config.tower_precharge_value
+            self.position_multipliers[reel][row] = value
         update_grid_mult_event(self)
 
     def assign_special_sym_function(self):

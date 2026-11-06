@@ -1,30 +1,27 @@
 import { stateBet, stateMeta, type BetModeData, type BetModeMeta } from 'state-shared';
 
-import config from './config';
+import skin from '$skin/skin.generated';
 import { t } from './wording';
 
-// Keys follow the SDK convention (upper case). Math mode names are the lower-case versions.
+// Modes, titles and dialog texts come from the skin (tools/gen/gen_rules.py): numbers are filled from
+// game.json and the published math, never typed here. Keys follow the SDK convention (upper case).
 // No external asset URLs: Engine builds may not load anything from outside the bundle.
 const noAssets = { icon: '', volatility: '', button: '', dialogImage: '', dialogVolatility: '' };
 
-const mode = (
-	key: string,
-	mathName: keyof typeof config.betModes,
-	type: BetModeData['type'],
-	title: string,
-	dialog: string,
-): BetModeData => ({
-	mode: key,
-	costMultiplier: config.betModes[mathName].cost,
-	type,
+type SkinMode = (typeof skin.rules.modes)[number];
+
+const mode = (m: SkinMode): BetModeData => ({
+	mode: m.key,
+	costMultiplier: m.cost,
+	type: m.type as BetModeData['type'],
 	parent: '',
 	children: '',
-	maxWin: config.betModes[mathName].max_win,
+	maxWin: m.maxWin ?? 0,
 	assets: noAssets,
 	text: {
-		title: t(title),
-		dialog: t(dialog),
-		button: type === 'buy' ? t('BUY') : type === 'activate' ? 'ACTIVATE' : '',
+		title: t(m.title),
+		dialog: t(m.dialog),
+		button: m.type === 'buy' ? t('BUY') : m.type === 'activate' ? 'ACTIVATE' : '',
 		// Shared LabelBet falls back to the spin-button text ("SPIN" in social mode); name the
 		// amount itself instead (Engine [77]).
 		betAmountLabel: t('BET'),
@@ -34,52 +31,19 @@ const mode = (
 	},
 });
 
-const rtpText = (mathName: keyof typeof config.betModes) =>
-	`RTP ${(config.betModes[mathName].rtp * 100).toFixed(2)}%. Max win ${config.betModes[mathName].max_win.toLocaleString('en-US')}x.`;
-
 // Built at init (after authenticate) so social-casino wording can apply.
-const buildBetModes = (): BetModeMeta => ({
-	BASE: mode('BASE', 'base', 'default', 'FATE: VEIL', `Standard play. Bonus about 1 in 400 spins. Every winning spin pays more than the bet. ${rtpText('base')}`),
-	OMEN: mode(
-		'OMEN',
-		'omen',
-		'activate',
-		'FATE: OMEN',
-		`Price 1.25x per spin. Bonus about 1 in 150 spins instead of 1 in 400. Many wins return less than the spin price. ${rtpText('omen')}`,
-	),
-	PROPHECY: mode(
-		'PROPHECY',
-		'prophecy',
-		'activate',
-		'FATE: PROPHECY',
-		`Price 2x per spin. Bonus about 1 in 80 spins. Many wins return less than the spin price. ${rtpText('prophecy')}`,
-	),
-	STAR: mode(
-		'STAR',
-		'star',
-		'buy',
-		'STAR BONUS',
-		`12-15 free spins. Starts with 5 spots charged at x2; sigils persist for the whole bonus. Can pay less than its price. ${rtpText('star')}`,
-	),
-	TOWER: mode(
-		'TOWER',
-		'tower',
-		'buy',
-		'TOWER BONUS',
-		`15-18 free spins. Starts with 12 spots charged at x2. Can pay less than its price. ${rtpText('tower')}`,
-	),
-});
+const buildBetModes = (): BetModeMeta => Object.fromEntries(skin.rules.modes.map((m) => [m.key, mode(m)]));
 
-export let SEVENTH_VEIL_BET_MODES: BetModeMeta = buildBetModes();
+export let BET_MODES: BetModeMeta = buildBetModes();
 
 export const initBetModes = () => {
-	SEVENTH_VEIL_BET_MODES = buildBetModes();
-	stateMeta.betModeMeta = SEVENTH_VEIL_BET_MODES;
+	BET_MODES = buildBetModes();
+	stateMeta.betModeMeta = BET_MODES;
 };
 
 /** Full cost of the active mode in base-bet multiples (buy modes included). */
 export const activeModeCost = () =>
-	SEVENTH_VEIL_BET_MODES[stateBet.activeBetModeKey.toUpperCase()]?.costMultiplier ?? 1;
+	BET_MODES[stateBet.activeBetModeKey.toUpperCase()]?.costMultiplier ?? 1;
 
 /**
  * Celebrate only a real win: payout strictly above what the round cost.

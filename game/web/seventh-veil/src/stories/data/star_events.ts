@@ -473,7 +473,7 @@ export default {
 		]
 	},
 	"wincap": {
-		"index": 60,
+		"index": 92,
 		"type": "wincap",
 		"amount": 7777700
 	}

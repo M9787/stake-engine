@@ -51,3 +51,12 @@ audio_in/
 
 # Asset pipeline venv (rembg, instruction 15)
 .venv-assets/
+
+# Factory build outputs: resolved game defs, reports, backups, determinism snapshots (plan Phase A-C)
+/build/
+
+# e2e gate dependencies and reports
+/tools/e2e/node_modules/
+/tools/e2e/test-results/
+/tools/e2e/playwright-report/
+/tools/e2e/shots/

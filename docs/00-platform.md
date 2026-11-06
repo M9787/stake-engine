@@ -21,11 +21,11 @@ None.
    | `device` | `mobile` or `desktop` |
    | `rgs_url` | RGS base URL — never hardcode, it can change |
 
-4. **RGS API flow.** Call `/wallet/authenticate` on load. Then per round: `/wallet/play` → animate → `/wallet/end-round`. `/wallet/balance` reads balance. Without authenticate, calls fail with `400 ERR_IS`.
-5. **Resume.** On reload, `round.event` in the authenticate response tells where to resume animations of an unfinished round.
+4. **RGS API flow.** Call `/wallet/authenticate` on load. Then per round: `/wallet/play` → animate → `/wallet/end-round`. `/wallet/balance` reads balance. Without authenticate, calls fail with `400 ERR_VAL`. A round with no win is closed by `/wallet/play` (`round.active` false); `/wallet/play` during an open round fails with `400 ERR_VAL`.
+5. **Resume.** During a multi-step round, `POST /bet/event {sessionID, event}` records progress. On reload, `round.event` in the authenticate response holds the last recorded value.
 6. **Money.** Integers with 6 decimal places: `1000000` = 1 unit. Currency affects display only.
-7. **Bets.** Bet must lie in `minBet..maxBet` and divide by `stepBet` (from authenticate). Debit = base bet × bet-mode cost multiplier.
-8. **Error codes.** 400: `ERR_VAL`, `ERR_IPB`, `ERR_IS`, `ERR_ATE`, `ERR_GLE`, `ERR_LOC`. 500: `ERR_GEN`, `ERR_MAINTENANCE`.
+7. **Bets.** Bet must lie in `minBet..maxBet` and divide by `stepBet` (from authenticate). Debit = base bet × bet-mode cost multiplier. `config.gameModes` lists `{mode, costMultiplier, maxBet}`: each mode has its own maxBet.
+8. **Error codes.** 400: `ERR_VAL`, `ERR_IPB`, `ERR_GLE`. 429: `ERR_ACT` (retry shortly). 500: `ERR_GEN`. Without an `ERR_*` body: plain-text 400 (malformed request), 423 on `/wallet/play` (new bets paused), 429 on demo (IP rate limit).
 9. **Stateless only.** Each bet is independent. No jackpots, gamble features, continuation, or early cash-out. Player choices happen before the spin, as bet modes. Math and modes cannot change after approval.
 10. **Revenue.** 10% of GGR, or a guaranteed 7.5% of expected GGR, chosen per team.
 11. **Approval.** Three reviewers each rate 0–3 stars in thirds (9 points total). A game needs **≥6/9 points** to publish. A failed review locks the thread for 3 days. The platform was renamed **Engine** (studio.engine.io) in Sep 2026.
@@ -40,7 +40,8 @@ None.
 
 | URL | Proves | Checked |
 |---|---|---|
-| https://stake-engine.com/docs/rgs | steps 1, 3–8 | 2026-09-19 |
+| https://stake-engine.com/docs/rgs | steps 1, 3–7; currency table + CurrencyMeta | 2026-11-06 |
+| https://stake-engine.com/docs/rgs/wallet | step 8 response codes; `gameModes`; `/bet/event` | 2026-11-06 |
 | https://stake-engine.com/docs/math/math-file-format | step 2 | 2026-09-19 |
 | https://stake-engine.com/docs/approval-guidelines | step 9 | 2026-09-19 |
 | https://stake-engine.com/ | step 10 | 2026-09-19 |

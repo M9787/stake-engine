@@ -17,6 +17,8 @@ export const PATCHES = [
 				/const lang = \(\) =>\s*getUrlSearchParam\('lang'\) === 'br' \? 'pt' : \(getUrlSearchParam\('lang'\) as Language\) \|\| 'en';/,
 				`const SUPPORTED_LANGS: string[] = ['en'];
 const lang = () => {
+	// Social casino wording exists in English only (Engine [77]): social=true forces 'en'.
+	if (getUrlSearchParam('social') === 'true') return 'en' as Language;
 	const raw = (getUrlSearchParam('lang') || '').toLowerCase();
 	return (SUPPORTED_LANGS.includes(raw) ? raw : 'en') as Language;
 };`,

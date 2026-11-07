@@ -8,12 +8,42 @@ Rules the game must meet before submission. Engine rules come from the approval 
 
 [06-game-design.md](06-game-design.md), [07-math-spec.md](07-math-spec.md).
 
+## Which rules block (Stake) and which warn (ours)
+
+Owner decision 2026-11-07: Stake Engine rules block packaging; our own quality rules only warn, with the reason, and you may still ship. One source of truth: [core/policy.v1.json](../core/policy.v1.json), read by `tools\gamedef\validate.py`, `tools\assets\precheck.py` and `tools\gates\*` (gate status `warn` = tool exited 0 with `WARN` lines). Checklist rows below marked "(ours: warning)" follow this table; every other row stays a hard rule. Sources checked 2026-11-07.
+
+| Rule id | Level | Rule | Source or reason |
+|---|---|---|---|
+| `rtp.band` | **stake: blocks** | Every mode's RTP between 96.0% and 96.7% | [math-verification](https://stake-engine.com/docs/approval-guidelines/math-verification) |
+| `rtp.ourBand` | ours: warning | RTP between 96.15% and 96.55% | The Engine computes RTP itself; a margin avoids a measured 96.70% failing. |
+| `wincap.hard` | **stake: blocks** | Max win at most 1,000,000x | [math-verification](https://stake-engine.com/docs/approval-guidelines/math-verification) |
+| `wincap.soft` | ours: warning | Max win at most 100,000x | Above it Stake's non-critical test lowers exposure and bet limits. |
+| `wincap.reachable` | **stake: blocks** | Max win more often than 1 in 10,000,000 | [math-verification](https://stake-engine.com/docs/approval-guidelines/math-verification) |
+| `cost.cheapest` | **stake: blocks** | Cheapest mode costs 1.0x, std dev at least 0.6 | [math-verification](https://stake-engine.com/docs/approval-guidelines/math-verification) |
+| `cost.max` | **stake: blocks** | Mode cost at most 50,000x | [math-verification](https://stake-engine.com/docs/approval-guidelines/math-verification) |
+| `modes.count` | **stake: blocks** | At most 20 modes | [math-verification](https://stake-engine.com/docs/approval-guidelines/math-verification) |
+| `sims.min` | **stake: blocks** | 100,000 to 1,000,000 simulations per mode | [math-verification](https://stake-engine.com/docs/approval-guidelines/math-verification) |
+| `social.words` | **stake: blocks** | No restricted social-casino words in player texts or mode names | [jurisdiction-requirements](https://stake-engine.com/docs/approval-guidelines/jurisdiction-requirements) |
+| `title.terms` | **stake: blocks** | Title avoids restricted terms (Megaways, XWays, Enhanced, Boosted, RTP, Gates of, Bonanza, Olympus, Rush, Kraken, Waylanders) | [prompt.md](https://stake-engine.com/docs-content/prompt.md) [213] |
+| `assets.unique` | **stake: blocks** | No web-sdk sample assets; unique, non-infringing assets | [front-end-communication](https://stake-engine.com/docs/approval-guidelines/front-end-communication) |
+| `assets.test` | **stake: blocks** | No factory test assets (licence `test`, `tools\assets\test_assets.py`) in a package | Test placeholders are not original game art. |
+| `assets.required` | **stake: blocks** | Tile (3:4) and cover (16:9) art exists | [game-tile-requirements](https://stake-engine.com/docs/approval-guidelines/game-tile-requirements) |
+| `assets.complete` | ours: warning | Every required art and sound slot is filled | Unfilled slots show drawn placeholder shapes: legal, but a low star rating. |
+| `assets.humanEdit` | ours: warning | Each image has a recorded human edit | Stake rates generic AI art low; a human edit also strengthens IP ownership. |
+| `assets.provenance` | ours: warning | Each file has a licence and source link | IP defence; Stake Terms require no third-party infringement. |
+| `assets.signoff` | ours: warning | Art signed off with the current asset-set hash | Owner review against the art-direction checklist. |
+| `bundle.size` | ours: warning | Build at most 10 MB (textures 5, audio 2.5, JS 1.5) | Stake 3-star criteria: optimised bundle size. |
+| `originality` | **stake: blocks** | Not substantially similar to an earlier game, including our own | Game Licence Terms 7.1(a)(viii), 2026-10-26 |
+| `originality.formula` | ours: warning | At least 2 mechanic differences plus a signature moment | Our way to stay clearly original; 3-star needs exceptional creativity. |
+
+`precheck.py` also blocks `skin.testOnly` (a skin with `identity.testOnly` is never packaged); that id is not in the policy file.
+
 ## Steps (checklist — run before every submission)
 
 Status 2026-10-28: `[x]` verified, `[ ]` open. `(code)` = implemented, not yet verified on screen. `[NNN]` = guideline ID in Engine's AI review prompt (`ai-review/prompt.md`); evidence in [ai-review-report.md](ai-review-report.md) Run 2.
 
 ### Math
-- [x] Every mode passes `scripts\math_stats.py`: RTP 0.9635–0.9665, Engine non-critical limits empty (0 failed classes), books match lookup.
+- [x] Every mode passes `scripts\math_stats.py`: RTP 0.9635–0.9665, Engine non-critical limits empty (0 failed classes), books match lookup. (Stake band 0.960–0.967 blocks; the tighter margin is ours: warning)
 - [x] Every mode has at least one max-win book (reviewer event ID).
 - [ ] Math frozen. No change after approval.
 
@@ -117,6 +147,7 @@ All boxes checked. Any unchecked box → PROJECT.md §11 row with owner.
 | https://stake-engine.com/docs/approval-guidelines/front-end-communication | disclosure, controls, win count-up | 2026-09-19 |
 | https://stake-engine.com/docs/approval-guidelines/game-replay-requirements | replay | 2026-09-19 |
 | https://stake-engine.com/docs/approval-guidelines/game-tile-requirements | tile | 2026-09-19 |
+| https://stake-engine.com/docs/approval-guidelines/math-verification | RTP band, wincap limits, cost, mode count, sim counts (`core/policy.v1.json` stake rules) | 2026-11-07 |
 | https://stake-engine.com/docs/approval-guidelines/jurisdiction-requirements | child appeal, social-casino words | 2026-09-19 |
 | https://stake-engine.com/docs/approval-guidelines/rgs-communication | bet levels, `minStep`, static files only, `rgs_url`, `lang` fallback | 2026-09-19 |
 | https://stake-engine.com/docs/approval-guidelines/submission-checklist | blurb, finalized game (public part only; full list login-gated) | 2026-09-19 |

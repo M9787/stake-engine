@@ -47,12 +47,15 @@ else {
         if ($Game -and $id -ne $Game) { continue }
         $vpy = Join-Path $root '.venv-assets\Scripts\python.exe'
         if (Test-Path $vpy) { & $vpy (Join-Path $root 'tools\assets\audio.py') --game $id | Out-Null; if ($LASTEXITCODE -ne 0) { Write-Host "FAIL  tools\assets\audio.py --game $id"; $failed++ } }
+        else { Write-Host "skip  audio sprite (asset tools missing: see PROJECT.md section 7)" }
         & $py (Join-Path $root 'tools\gen\gen_web_static.py') --game $id
         & $py (Join-Path $root 'tools\gen\gen_assets_ts.py') --game $id | Out-Null
         if ($LASTEXITCODE -ne 0) { Write-Host "FAIL  tools\gen\gen_web_static.py --game $id"; $failed++ }
         if (-not (Test-Path (Join-Path $root "math-sdk\games\$id\library\configs\config_fe_$id.json"))) {
             Write-Host "skip  skin data $id (no math output yet: build the math first)"; continue
         }
+        & $py (Join-Path $root 'scripts\gen_fe_config.py') --game $id | Out-Null
+        if ($LASTEXITCODE -ne 0) { Write-Host "FAIL  scripts\gen_fe_config.py --game $id"; $failed++ }
         foreach ($gen in @('gen_rules.py', 'gen_skin_ts.py')) {
             & $py (Join-Path $root "tools\gen\$gen") --game $id | Out-Null
             if ($LASTEXITCODE -ne 0) { Write-Host "FAIL  tools\gen\$gen --game $id"; $failed++ }

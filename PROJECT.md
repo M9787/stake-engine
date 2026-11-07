@@ -30,6 +30,7 @@ DONE test: a task that conflicts with this list is rejected.
 | Python | 3.12.9 | math-sdk needs >=3.12 |
 | Rust/Cargo | 1.98.1 stable, `x86_64-pc-windows-gnu` override in `math-sdk\optimization_program` | math-sdk optimizer; GNU target avoids the multi-GB MSVC Build Tools install |
 | Svelte / PixiJS / TurboRepo | 5 / 8 / from lockfile | web-sdk |
+| Factory editor (`factory\`, own lockfile) | svelte 5.20.5, @sveltejs/kit 2.17.3, @sveltejs/vite-plugin-svelte 5.0.3, vite 6.2.0, typescript 5.8.3 (same as the core app; offline install from the pnpm store) | M12 local editor on 127.0.0.1:5174 (docs/10 plan v3.3) |
 | pixi.js (direct dep of the core app) | 8.8.1, same version pixi-svelte locks; added 2026-11-07 | runtime bitmap fonts from the skin font (`src\slots\fonts.ts`, plan v3.3 10.6b); no new download |
 | web-sdk clone | `1843d60cedb94b390e641b563f32ad64353bec5e` | SDK pin; upgrade only on a branch + full golden gate (docs/10) |
 | math-sdk clone | `307e6812b38489e212f835001f21e9f7d4c18a4d` | SDK pin; same rule |
@@ -91,7 +92,7 @@ Open work, scored and prioritized: [TODO.md](TODO.md).
 | M6e | Verification | e2e replay of loss/win/big/bonus/max in all 5 modes; screenshots at reviewer sizes + Popout; docs/08 all `[x]`; reviewer IDs filled; AI review 0 FAIL | |
 | M6f | Package, staging, submit | Studio plays 1 round per mode; tile + cover; golden lock in `skins\oracle-of-sevens`; tag `seventh_veil-v1.0.0`; submitted | |
 | M7–M11 | Core extraction (Phase B) | Oracle rebuilt from `core\` + `skins\oracle-of-sevens` with identical books and config; `gate.ps1 -Game seventh_veil` and `-Game zz_smoke` exit 0 | M7 done 2026-11-06: schema `core\schema\game-definition.v1.schema.json`; `skins\oracle-of-sevens\game.json` + `text\en.json`; `validate.py` 0 errors (11 broken cases caught); `compare_config.py` IDENTICAL (config + optimizer setup + reshape). M8 done 2026-11-07: core in `core\math\cluster_tumble`, shims via `sync.ps1`; `quick_books.py` 320/320 identical; full shim run with frozen weights gives `snapshot.py --verify` IDENTICAL (40 files) against `golden.lock.json` and byte-identical `math_stats --json` (docs/07 "Core rebuild"). M9 done 2026-11-06 except the M10-dependent part: every generator takes `--game` (`tools\gamedef\gamectx.py` maps id to paths); `gen_rules.py` + `gen_skin_ts.py` write `build\<id>\web\`; `check_generated.py` 5/5 current; config.ts, stories and mock byte-identical; `game.json theme` drives `assets_build.py` |
-| M12–M17 | Factory editor (Phase C) | a non-developer builds `zz_smoke` in under 2 h; game #2 passes all gates and is submitted | |
+| M12–M17 | Factory editor (Phase C) | a non-developer builds `zz_smoke` in under 2 h; game #2 passes all gates and is submitted | M12 v1 done 2026-11-07: `factory\` editor on 127.0.0.1:5174 (`factory\start.cmd`): game list, new game from template (`tools\new_game.py`), definition editor with history, asset desk (prompts, raw/edited upload, provenance, style reference, ingest, contact sheet, sign-off), build/check/package jobs with live logs, preview. Exit proven: `tools\e2e\tests\factory.spec.ts` 3/3; 3 slots through the editor = CLI ingest hashes IDENTICAL. **Factory v2 done 2026-11-07** (docs/10 plan v3.4, owner guide [docs/11](docs/11-factory-guide.md)): Stake rules block / our rules warn (`core\policy.v1.json`); Setup page with presets (low/medium/high, boards 5x5–8x8; preview math proven RTP 0.965 + critical PASS on 6x6 medium/high, 7x7 low) + Advanced forms; "Fill with test assets"; ordered 10-step build page with math state + freeze; submission pack (`tools\release\pack.py`: Studio fields, per-mode math report, event IDs, checklist, licence log, screenshots) + Submit page. End-to-end proof `tools\e2e\factory_flow.ps1`: new game "Hands On" from template → preset → math → test assets → build → fast check → pack → package correctly refused (test assets, 10k-spin math) |
 
 Plan v3.3 (2026-11-07, docs/10 end section) re-sequences: Slice 0 (asset catalogue + prompts) → M10 rest → M11 → M6d (CLI ingest) → M6e → M6f submit → M12–M17 during Oracle's review.
 
@@ -104,6 +105,14 @@ Run from `stake\` in PowerShell.
 | Intent | Command |
 |---|---|
 | Check env | `powershell -ExecutionPolicy Bypass -File scripts\doctor.ps1` |
+| **Factory editor** (owner UI) | double-click `factory\start.cmd` → http://127.0.0.1:5174 (dev: `Push-Location factory; pnpm exec vite dev`) |
+| New game from a template | `math-sdk\env\Scripts\python.exe tools\new_game.py --from <skin folder> --id <gameId> --name "<Name>"` |
+| Gate (all checks) / package | `powershell -ExecutionPolicy Bypass -File tools\gates\gate.ps1 -Game <id> [-Fast] [-PreArt]` → `build\<id>\reports\gate.json` · `... tools\package.ps1 -Game <id>` → `release\<id>\<ver>\` |
+| Factory end-to-end proof (new game → pack) | editor running, then `powershell -ExecutionPolicy Bypass -File tools\e2e\factory_flow.ps1 -Game zz_hands_on [-Keep]` |
+| Test assets (fill / remove) | `.venv-assets\Scripts\python.exe tools\assets\test_assets.py --game <id> [--clear]` (licence `test`: packaging refuses them) |
+| Preset (board, volatility, max win, bonus, modes) | `math-sdk\env\Scripts\python.exe tools\gamedef\apply_preset.py --game <id> --board 6x6 --volatility medium --wincap 5000 --bonus-one-in 400 --modes base,ante,buy` |
+| Freeze math / submission pack / event IDs | `math-sdk\env\Scripts\python.exe tools\math\freeze.py --game <id>` · `... tools\release\pack.py --game <id> [--dry-run]` · `... tools\release\pick_event_ids.py --game <id> --version <n>` |
+| Editor e2e (M12 exit) | editor running, then `$env:FACTORY='1'; Push-Location tools\e2e; pnpm exec playwright test factory; Pop-Location`; clean up with `tools\e2e\factory_cleanup.ps1` |
 | Copy game code into SDKs | `powershell -ExecutionPolicy Bypass -File scripts\sync.ps1` |
 | Build math | `Push-Location math-sdk; .\env\Scripts\python.exe games\seventh_veil\run.py; Pop-Location` (since M8 a generated shim: core + `skins\oracle-of-sevens\game.json`; switches `CT_SKIP_SIMS`, `CT_SKIP_OPT`, `CT_REUSE_WEIGHTS`, `CT_MODES`, old `SV_*` names still work) |
 | Validate a game definition | `math-sdk\env\Scripts\python.exe tools\gamedef\validate.py skins\oracle-of-sevens\game.json` |
@@ -195,6 +204,7 @@ Books → `bookEventHandlerMap` → EmitterEvents. Event types: `reveal`, `winIn
 | Q31 | ~~Human-edit tool~~ closed 2026-11-07: images edited in Photopea; art sign-off in the owner's name | — | no |
 | Q32 | ~~Art privacy~~ closed 2026-11-07: Midjourney Pro (Stealth) | — | no |
 | Q33 | ~~Spine~~ closed 2026-11-07: Oracle ships with code-driven motion on flat images; Spine stays an optional per-slot upgrade. Audio needs licence + source only (no human edit) | — | no |
+| Q34 | Reviewer "event ID" = the book (simulation) id in `books_<mode>.jsonl.zst`, used in `/bet/replay/{game}/{version}/{mode}/{event}` (assumed in `tools\release\pick_event_ids.py`, docs/10 C3). Confirm on Engine staging with one replay per mode | agent | M6f |
 | Q16 | ElevenLabs self-serve **music** terms exclude "Studio Games"; whether its **sound effects** terms allow a commercial online slot on Starter is not confirmed. docs/09 uses CC0 SFX until this is closed. Check elevenlabs.io/terms-of-use and the SFX terms, or ask support | project owner | M6 |
 
 ## 12. Sources

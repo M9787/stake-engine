@@ -67,3 +67,9 @@ audio_in/
 !/release/*/*/
 !/release/*/*/manifest.json
 !/release/*/*/submission.md
+
+# Factory editor (M12)
+/factory/node_modules/
+/factory/.svelte-kit/
+/skins/*/.history/
+/core/web/cluster-tumble/src/stories/generated/

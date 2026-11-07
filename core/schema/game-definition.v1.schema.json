@@ -154,7 +154,7 @@
       "type": "object", "additionalProperties": false, "required": ["rtp", "wincap", "sims", "run", "targets"], "x-frozen": "math",
       "properties": {
         "rtp": { "type": "number", "minimum": 0.96, "maximum": 0.967, "description": "Return to player, same in every mode (Engine band 96.0-96.7%)." },
-        "wincap": { "type": "number", "minimum": 100, "maximum": 100000, "x-unit": "x bet", "description": "Max win." },
+        "wincap": { "type": "number", "minimum": 100, "maximum": 1000000, "x-unit": "x bet", "description": "Max win. Stake hard cap 1,000,000x; above 100,000x Stake lowers exposure and bet limits (non-critical test), so the factory warns (core/policy.v1.json)." },
         "sims": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 10000, "maximum": 1000000 } },
         "run": {
           "type": "object", "additionalProperties": false, "required": ["threads", "batching"],
@@ -219,6 +219,16 @@
             "properties": { "music": { "enum": ["main", "feature"], "description": "Background music while this mode is selected." } }
           }
         }
+      }
+    },
+    "listing": {
+      "type": "object", "additionalProperties": false,
+      "description": "What the Stake Studio submission form asks for (tools/release/pack.py). Text only, never changes the math.",
+      "properties": {
+        "blurb": { "type": "string", "maxLength": 600, "description": "Short description of the theme and mechanics (Studio description field)." },
+        "features": { "type": "array", "items": { "type": "string", "maxLength": 120 }, "maxItems": 10, "description": "Feature bullet points for the listing and reviewer notes." },
+        "reviewerNotes": { "type": "string", "maxLength": 2000, "description": "Anything reviewers should know (how to reach the bonus, signature moment)." },
+        "distribution": { "enum": ["onlyStake", "network"], "description": "Stake only, or Stake plus the Engine network. Fixed at launch; network forbids reskins." }
       }
     },
     "review": {

@@ -90,6 +90,8 @@ def main():
     cat = Catalog(gid)
     prov = cat.provenance()
     allow = set(cat.core["imageLicences"] + cat.core["audioLicences"] + cat.core["fontLicences"])
+    if cat.core.get("testLicence"):
+        allow.add(cat.core["testLicence"])  # factory test placeholders (tools\assets\test_assets.py); precheck blocks them
     required = [s for s in cat.slots if s["required"] == "ship"]
     done = 0
     by_sitting = {}
@@ -98,6 +100,14 @@ def main():
         if ok and s["required"] == "ship":
             done += 1
         by_sitting.setdefault(s["sitting"], []).append((s, ok, issues))
+    if "--json" in sys.argv:
+        out = {
+            "required": {"filled": done, "total": len(required)},
+            "unknownFiles": unknown_files(cat),
+            "slots": {s["id"]: {"complete": ok, "issues": issues} for rows in by_sitting.values() for s, ok, issues in rows},
+        }
+        print(json.dumps(out))
+        return
     titles = {x["id"]: x["title"] for x in cat.core["sittings"]}
     for sid in sorted(by_sitting):
         rows = by_sitting[sid]

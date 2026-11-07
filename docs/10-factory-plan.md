@@ -881,3 +881,10 @@ M12 exit: the desk is proven end to end on 3 slots, and re-ingesting every Oracl
 5. M11: steps 1-7, then the exit gate.
 6. If the session still has room: start M12 (pins, then the `factory\` scaffold).
 7. Report and update the work state.
+
+
+---
+
+# Plan v3.4 (2026-11-07): hands-on factory and submission pack
+
+Research on stake-engine.com/docs and the Game Licence Terms (2026-10-26) showed several of our rules are not Stake requirements. Owner decision: **Stake rules block packaging, our own rules warn** with the reason (`core\policy.v1.json`, rendered in docs/08). Added: presets + Advanced setup page, test assets (licence `test`, never packaged), ordered build pipeline with math state and freeze, per-game submission pack (`tools\release\pack.py`) and Submit page, owner guide [docs/11](11-factory-guide.md). Proof: `tools\e2e\factory_flow.ps1`.

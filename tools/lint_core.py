@@ -27,21 +27,23 @@ def skin_words():
     for gpath in (ROOT / "skins").glob("*/game.json"):
         g = json.loads(gpath.read_text(encoding="utf-8"))
         words.add(g["identity"]["gameId"])
-        words.update(w for w in re.findall(r"[A-Za-z]{4,}", g["identity"]["displayName"]))
+        # Display and symbol names are matched as whole phrases: single common words ("Hands", "Lucky")
+        # would flag ordinary core text. Distinctive skin words go in ALWAYS.
+        words.add(g["identity"]["displayName"].strip())
         words.update(m["name"] for m in g["modes"])
         words.update(v["id"] for v in g["features"]["bonusVariants"])
         text = gpath.parent / "text" / "en.json"
         if text.exists():
             t = json.loads(text.read_text(encoding="utf-8"))
             for key, val in t.items():
-                if key.startswith("symbol.") and isinstance(val, str):
-                    words.update(w for w in re.findall(r"[A-Za-z]{4,}", val))
+                if key.startswith("symbol.") and isinstance(val, str) and len(val.strip()) >= 4:
+                    words.add(val.strip())
     return sorted(w.lower() for w in words if w.lower() not in ALLOW)
 
 
 # Generated or sample files that still sit inside the core app, with the slice that removes them.
 TEMP_EXCLUDE = {
-    "web/cluster-tumble/src/stories": "M10 slice 10.7 moves generated stories to src/stories/generated (ignored)",
+    "web/cluster-tumble/src/stories/generated": "generated per game by scripts/books_to_stories.py (git-ignored)",
 }
 ALLOW_MARK = "lint-core: allow"
 

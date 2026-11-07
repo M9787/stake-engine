@@ -14,6 +14,9 @@ its field (docs/10 section 3). Rules:
 - mode names: unique ignoring case, no restricted social-casino word (Engine [77]); cheapest cost 1.0
 - math: one target per mode, of the mode's kind; spin quotas sum to 1; RTP parts sum to the RTP
 - enough books per outcome type at the chosen sim count (e.g. wincap >= 100 books)
+Policy levels (core/policy.v1.json): errors are Stake rules (level "stake", block); warnings are our own
+rules (level "ours"), e.g. RTP outside 0.9615-0.9655 (rtp.ourBand) or wincap above 100,000x (wincap.soft).
+--json adds "level" to every issue and "rule" where a policy rule id applies.
 """
 
 import csv
@@ -37,6 +40,10 @@ MIN_BOOKS = {"wincap": 100, "freegame": 1000, "zero": 1000, "basegame": 1000}
 # Preview tier (CT_TIER=preview, 10k sims): smaller minimums; output is an estimate, never published.
 MIN_BOOKS_PREVIEW = {"wincap": 10, "freegame": 100, "zero": 100, "basegame": 100}
 RTP_TOLERANCE = 0.0005
+# Our own margins inside the Stake limits (core/policy.v1.json, level "ours"): warnings, never errors.
+OUR_RTP_BAND = (0.9615, 0.9655)  # rtp.ourBand; the Stake band 0.960-0.967 (rtp.band) is in the schema
+SOFT_WINCAP = 100_000  # wincap.soft; the Stake hard cap 1,000,000x (wincap.hard) is in the schema
+SCHEMA_RULES = {"math/rtp": "rtp.band", "math/wincap": "wincap.hard"}
 
 
 def restricted_words():
@@ -69,20 +76,22 @@ def max_window_count(columns, symbol, window):
 def validate(game_path: Path):
     errors, warnings = [], []
 
-    def err(path, msg):
-        errors.append({"path": path, "message": msg})
+    # Policy levels (core/policy.v1.json): errors are Stake rules (block), warnings are our own (ours).
+    def err(path, msg, rule=None):
+        errors.append({"path": path, "message": msg, **({"rule": rule} if rule else {}), "level": "stake"})
 
-    def warn(path, msg):
-        warnings.append({"path": path, "message": msg})
+    def warn(path, msg, rule=None):
+        warnings.append({"path": path, "message": msg, **({"rule": rule} if rule else {}), "level": "ours"})
 
     try:
         gdef = json.loads(game_path.read_text(encoding="utf-8"))
         schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        return None, [{"path": "", "message": f"cannot read: {exc}"}], []
+        return None, [{"path": "", "message": f"cannot read: {exc}", "level": "stake"}], []
 
     for e in sorted(Draft202012Validator(schema).iter_errors(gdef), key=lambda e: list(e.absolute_path)):
-        err("/".join(str(p) for p in e.absolute_path) or "(root)", e.message)
+        epath = "/".join(str(p) for p in e.absolute_path) or "(root)"
+        err(epath, e.message, SCHEMA_RULES.get(epath))
     if errors:
         return gdef, errors, warnings  # logic checks assume the schema shape
 
@@ -191,7 +200,7 @@ def validate(game_path: Path):
         path = f"modes/{m['name']}"
         hit = [w for w in words if re.search(rf"\b{re.escape(w)}\b", m["name"].replace("_", " ").replace("-", " "), re.I)]
         if hit:
-            err(path, f"Mode name uses restricted social-casino words {hit} (Engine [77]); mode names are shared with social play.")
+            err(path, f"Mode name uses restricted social-casino words {hit} (Engine [77]); mode names are shared with social play.", "social.words")
         if m["kind"] == "buy":
             if m.get("variant") not in ids:
                 err(f"{path}/variant", f"Buy mode needs an existing bonus variant {ids}.")
@@ -226,10 +235,17 @@ def validate(game_path: Path):
                     err(f"{path}/quotas/{key}", f"Only {share * sims:.0f} {key} books at {sims} sims; at least {need} are needed.")
     costs = [m["cost"] for m in gdef["modes"]]
     if min(costs) != 1.0:
-        err("modes", f"The cheapest mode must cost 1.0 (Engine critical test); it costs {min(costs)}.")
+        err("modes", f"The cheapest mode must cost 1.0 (Engine critical test); it costs {min(costs)}.", "cost.cheapest")
 
     # math targets
     math = gdef["math"]
+    if not OUR_RTP_BAND[0] <= math["rtp"] <= OUR_RTP_BAND[1]:
+        warn("math/rtp", f"RTP {math['rtp']} is inside Stake's 0.960-0.967 band but outside our margin "
+             f"{OUR_RTP_BAND[0]}-{OUR_RTP_BAND[1]}: the Engine computes RTP itself, so a measured value may land outside Stake's band.",
+             "rtp.ourBand")
+    if math["wincap"] > SOFT_WINCAP:
+        warn("math/wincap", f"Max win {math['wincap']:,}x is above {SOFT_WINCAP:,}x: Stake's non-critical test then lowers "
+             "exposure and bet limits.", "wincap.soft")
     for m in gdef["modes"]:
         t = math["targets"].get(m["name"])
         path = f"math/targets/{m['name']}"
@@ -362,9 +378,9 @@ def main():
         print(json.dumps({"ok": not errors, "errors": errors, "warnings": warnings}, indent=2))
     else:
         for e in errors:
-            print(f"ERROR  {e['path']}: {e['message']}")
+            print(f"ERROR  {e['path']}: {e['message']}" + (f" [{e['rule']}]" if e.get("rule") else ""))
         for w in warnings:
-            print(f"warn   {w['path']}: {w['message']}")
+            print(f"warn   {w['path']}: {w['message']}" + (f" [{w['rule']}, ours: warning]" if w.get("rule") else ""))
         print(f"{'OK' if not errors else 'FAIL'}: {len(errors)} error(s), {len(warnings)} warning(s) - {game_path.name}")
     sys.exit(2 if gdef is None else (1 if errors else 0))
 

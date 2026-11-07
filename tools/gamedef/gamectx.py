@@ -23,7 +23,7 @@ DEFAULT_GAME = "seventh_veil"
 # config.ts and stories inside the core app's src (removed by slices 10.4/10.7).
 CORE_WEB_APP = "cluster-tumble"
 CORE_WEB = ROOT / "core" / "web" / CORE_WEB_APP
-GENERATED_IN_APP = {"seventh_veil"}
+GENERATED_IN_APP: set = set()  # since M10 slice 10.7 nothing generated lives in the app source
 
 
 def game_arg(argv=None, default=DEFAULT_GAME):

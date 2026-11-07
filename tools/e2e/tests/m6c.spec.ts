@@ -1,7 +1,15 @@
 // M6c compliance checks against the mock RGS (docs/08 "Bets and balance", docs/10 M6c).
+import fs from 'node:fs';
+import path from 'node:path';
 import { expect, test } from '@playwright/test';
 
 import { errorText, gameUrl, openGame, spin, sv } from './helpers';
+
+// Modes from the skin (build/<GAME>/web/modes.json): the maxBet check uses the first buy mode.
+const GAME = process.env.GAME ?? 'seventh_veil';
+const SKIN = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, '../../../build', GAME, 'web', 'modes.json'), 'utf-8'));
+const BUY = SKIN.modes.filter((m: { kind: string }) => m.kind === 'buy').map((m: { key: string }) => m.key) as string[];
+const SPIN = (SKIN.modes.find((m: { cost: number }) => m.cost === 1) ?? SKIN.modes[0]).key as string;
 
 const playRequests = (page: import('@playwright/test').Page) => {
 	const list: number[] = [];
@@ -37,11 +45,14 @@ test('ERR_ACT is retried, then the round plays', async ({ page }) => {
 
 test('gameModes maxBet caps bet levels per mode', async ({ page }) => {
 	await openGame(page, gameUrl(['maxbuy5']));
-	expect(await sv<Record<string, number>>(page, 'sv.stateSession.modeMaxBet')).toMatchObject({ STAR: 5, TOWER: 5, BASE: 100 });
-	await sv(page, "(sv.stateBet.betAmount = 20, sv.stateBet.activeBetModeKey = 'STAR', true)");
+	expect(await sv<Record<string, number>>(page, 'sv.stateSession.modeMaxBet')).toMatchObject({
+		...Object.fromEntries(BUY.map((k) => [k, 5])),
+		[SPIN]: 100,
+	});
+	await sv(page, `(sv.stateBet.betAmount = 20, sv.stateBet.activeBetModeKey = '${BUY[0]}', true)`);
 	await expect.poll(() => sv<number>(page, 'sv.stateBet.betAmount')).toBe(5);
 	expect(await sv<number>(page, 'Math.max(...sv.stateConfig.betAmountOptions)')).toBe(5);
-	await sv(page, "(sv.stateBet.activeBetModeKey = 'BASE', true)");
+	await sv(page, `(sv.stateBet.activeBetModeKey = '${SPIN}', true)`);
 	await expect.poll(() => sv<number>(page, 'Math.max(...sv.stateConfig.betAmountOptions)')).toBe(100);
 });
 
@@ -78,7 +89,9 @@ test('bonus resume: /bet/event recorded, reload resumes the open round', async (
 	const round = (await (await auth).json()).round;
 	expect(round?.active).toBe(true);
 	expect(Number(round.event)).toBeGreaterThan(0);
-	expect(events).toContain(String(round.event));
+	// The server may have recorded one step more than this listener saw before the reload (owner-approved
+	// fix 2026-11-07 for a timing race): it must be at least the last step the browser sent.
+	expect(Number(round.event)).toBeGreaterThanOrEqual(Math.max(...events.map(Number)));
 	// Resume plays the rest of the bonus and settles it.
 	await page.waitForFunction(() => (globalThis as any).__sv, null, { timeout: 60_000 });
 	const canvas = page.locator('canvas').first();

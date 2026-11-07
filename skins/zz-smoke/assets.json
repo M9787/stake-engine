@@ -32,7 +32,8 @@
       "scatterWin": "rising chime",
       "retrigger": "gong",
       "winEnd": "soft resolve"
-    }
+    },
+    "sref": null
   },
   "slots": {}
 }

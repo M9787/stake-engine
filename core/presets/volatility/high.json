@@ -1,0 +1,46 @@
+{
+  "_doc": "Volatility preset for tools/gamedef/apply_preset.py. High = rarer, bigger wins: lower hit rate, more RTP in the bonus, bigger top pays, higher grid cap and more pre-charged spots. Same layout as medium.json.",
+  "id": "high",
+  "label": "High",
+  "explain": "Wild: a win about every 5 spins, a bonus about every 600 spins, much bigger top wins.",
+  "defaults": { "wincap": 20000, "bonusOneIn": 600 },
+  "pays": {
+    "H1": [6.0, 15.0, 40.0, 250.0],
+    "H2": [3.5, 7.0, 15.0, 100.0],
+    "H3": [2.8, 5.0, 10.0, 60.0],
+    "H4": [2.2, 4.0, 7.0, 40.0],
+    "L1": [1.6, 2.5, 4.0, 15.0],
+    "L2": [1.4, 2.0, 3.5, 12.0],
+    "L3": [1.2, 1.8, 2.5, 8.0],
+    "L4": [1.2, 1.8, 2.5, 8.0]
+  },
+  "grid": { "capByWincap": [[5000, 256], [20000, 512], [1000000, 1024]], "capFactor": 2 },
+  "precharge": { "spots": 6, "value": 2 },
+  "buyFloor": 10.0,
+  "retriggerSpins": 5,
+  "base": {
+    "quotas": { "wincap": 0.001, "freegame": 0.1, "zero": 0.5, "basegame": 0.399 },
+    "scatterTriggers": { "wincap": { "5": 1, "6": 1 }, "freegame": { "3": 20, "4": 6, "5": 2, "6": 1 } },
+    "wincapRtp": 0.01, "freegameRtp": 0.455, "hitOneIn": 5.0,
+    "midWinLift": [6.0, 20.0],
+    "baseScaling": [[[1, 3], 4.0], [[3, 6], 2.0]]
+  },
+  "ante": {
+    "cost": 1.25,
+    "bonusRatio": 0.35,
+    "quotas": { "wincap": 0.001, "freegame": 0.2, "zero": 0.45, "basegame": 0.349 },
+    "scatterTriggers": { "wincap": { "5": 1, "6": 1 }, "freegame": { "3": 20, "4": 6, "5": 2, "6": 1 } },
+    "wincapRtp": 0.008, "freegameRtp": 0.507, "hitOneIn": 5.0,
+    "midWinLift": [3.0, 6.0],
+    "baseScaling": [[[1, 1.25], 0.2], [[1.25, 3], 8.0], [[3, 6], 3.0]]
+  },
+  "buy": {
+    "cost": 100.0,
+    "quotas": { "wincap": 0.002 },
+    "scatterTriggers": { "all": { "3": 5, "4": 2, "5": 1 } },
+    "wincapRtp": 0.01, "freegameRtp": 0.955,
+    "minM2m": 1.0, "maxM2m": 6.0,
+    "scaling": [[[10, 50], 0.4], [[50, 1000], 2.5]],
+    "topScaling": [0.5, 0.5]
+  }
+}

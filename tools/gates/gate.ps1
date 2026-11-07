@@ -29,9 +29,11 @@ function Step([string]$name, [string]$tier, [bool]$enforced, [scriptblock]$cmd) 
     $out = & $cmd 2>&1 | Out-String
     $code = $LASTEXITCODE
     $secs = [math]::Round(((Get-Date) - $t0).TotalSeconds, 1)
-    $status = if ($code -eq 0) { 'pass' } elseif ($enforced) { 'FAIL' } else { 'todo' }
+    # A tool that exits 0 but prints WARN lines broke only our own rules (core\policy.v1.json level 'ours').
+    $warns = @($out -split "`n" | Where-Object { $_.TrimStart() -match '^WARN\b' }).Count
+    $status = if ($code -eq 0) { if ($warns) { 'warn' } else { 'pass' } } elseif ($enforced) { 'FAIL' } else { 'todo' }
     $last = ($out.Trim() -split "`n" | Where-Object { $_.Trim() } | Select-Object -Last 1)
-    $script:results += [pscustomobject]@{ step = $name; status = $status; seconds = $secs; detail = "$last".Trim() }
+    $script:results += [pscustomobject]@{ step = $name; status = $status; seconds = $secs; warnings = $warns; detail = "$last".Trim() }
     Write-Host ("{0,-5} {1,-28} {2,6}s  {3}" -f $status, $name, $secs, "$last".Trim())
 }
 
@@ -66,15 +68,24 @@ if ($testOnly) {
     Step 'package precheck' 'full' $true { if ($PreArt) { & $py tools\assets\precheck.py --game $Game --pre-art } else { & $py tools\assets\precheck.py --game $Game } }
 }
 $e2eSpecs = if ($Fast) { 'm6c baseline' } else { 'm6c baseline replay' }
-Step "e2e ($e2eSpecs)" 'fast' $true { Push-Location tools\e2e; pnpm exec playwright test @($e2eSpecs -split ' '); Pop-Location }
+# A new game has no screenshot baselines yet: capture them on its first check and warn (review them in
+# tools\e2e\baselines\<game>\), instead of failing every screenshot test.
+$baseDir = Join-Path $root "tools\e2e\baselines\$Game"
+$missing = @('1280x720', '1200x675', '400x225', '425x812') | Where-Object { -not (Test-Path (Join-Path $baseDir "$_.png")) }
+if ($missing) {
+    Step 'screenshot baselines (first run)' 'fast' $true { Push-Location tools\e2e; cmd /c "pnpm exec playwright test baseline --update-snapshots 2>&1"; $code = $LASTEXITCODE; Pop-Location; if ($code -eq 0) { Write-Output "WARN  [baselines.new] first screenshots captured in tools\e2e\baselines\$Game - review them once" }; $global:LASTEXITCODE = $code }
+}
+# cmd /c: the PowerShell pnpm shim mangles array arguments (test filters arrive empty).
+Step "e2e ($e2eSpecs)" 'fast' $true { Push-Location tools\e2e; cmd /c "pnpm exec playwright test $e2eSpecs 2>&1"; $code = $LASTEXITCODE; Pop-Location; $global:LASTEXITCODE = $code }
 Pop-Location
 
 $report = Join-Path $root "build\$Game\reports"
 New-Item -ItemType Directory -Force $report | Out-Null
 $failed = @($results | Where-Object { $_.status -eq 'FAIL' }).Count
+$warnings = (@($results | ForEach-Object { if ($_.PSObject.Properties['warnings']) { [int]$_.warnings } else { 0 } }) | Measure-Object -Sum).Sum
 [pscustomobject]@{
     game = $Game; date = (Get-Date).ToString('s'); fast = [bool]$Fast; preArt = [bool]$PreArt
-    gitHead = (git -C $root rev-parse --short HEAD); failed = $failed; steps = $results
+    gitHead = (git -C $root rev-parse --short HEAD); failed = $failed; warnings = [int]$warnings; steps = $results
 } | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 (Join-Path $report 'gate.json')
-Write-Host ("{0}: gate {1} ({2} failed, report build\{1}\reports\gate.json)" -f $(if ($failed) { 'FAIL' } else { 'OK' }), $Game, $failed)
+Write-Host ("{0}: gate {1} ({2} failed, {3} warning(s), report build\{1}\reports\gate.json)" -f $(if ($failed) { 'FAIL' } else { 'OK' }), $Game, $failed, [int]$warnings)
 exit $(if ($failed) { 1 } else { 0 })

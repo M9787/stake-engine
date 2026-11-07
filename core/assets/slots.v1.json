@@ -20,6 +20,7 @@
   "audioLicences": ["suno-pro", "suno-premier", "cc0", "owner-made"],
   "imageLicences": ["midjourney-pro", "midjourney-mega", "owner-made"],
   "fontLicences": ["ofl"],
+  "testLicence": "test",
   "slots": [
     { "id": "hero", "kind": "image", "sitting": 1, "px": null, "aspect": "16:9", "alpha": false, "cutout": false, "sref": false,
       "required": "source", "variants": 4, "tool": "midjourney", "editRecipe": null,

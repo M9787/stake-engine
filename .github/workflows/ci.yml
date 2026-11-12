@@ -1,0 +1,96 @@
+# Fast engine gate: secret scan, game-definition lint, core math golden parity.
+# No math sims, no web build, no Playwright, no deploy (full gate: tools/gates/gate.ps1, local).
+# Pins mirror PROJECT.md section 3. Actions are pinned to commit SHAs (tag in the comment).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12.9"
+  NODE_VERSION: "22.16.0"
+  JSONSCHEMA_VERSION: "4.26.0"
+  MATH_SDK_REPO: https://github.com/StakeEngine/math-sdk.git
+  MATH_SDK_SHA: 307e6812b38489e212f835001f21e9f7d4c18a4d
+
+jobs:
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  lint:
+    name: Game definitions and core lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install jsonschema
+        run: python -m pip install "jsonschema==${JSONSCHEMA_VERSION}"
+      - name: Validate tracked game definitions
+        run: |
+          python tools/gamedef/validate.py skins/oracle-of-sevens/game.json
+          python tools/gamedef/validate.py skins/zz-smoke/game.json
+      - name: No skin literals in core
+        run: python tools/lint_core.py
+      - name: Skin lint
+        run: python tools/lint_skin.py
+      - name: Currency formatting
+        run: node --experimental-strip-types scripts/check_amount.ts
+
+  golden:
+    name: Core math = hand-written reference
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Clone math-sdk at the pinned commit
+        run: |
+          git init -q math-sdk
+          git -C math-sdk fetch -q --depth 1 "$MATH_SDK_REPO" "$MATH_SDK_SHA"
+          git -C math-sdk checkout -q FETCH_HEAD
+          test "$(git -C math-sdk rev-parse HEAD)" = "$MATH_SDK_SHA"
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: math-sdk/requirements.txt
+      - name: Install math-sdk
+        # Line 1 of requirements.txt installs math-sdk from another commit; install the pinned clone instead.
+        run: |
+          grep -v '^-e ' math-sdk/requirements.txt > "$RUNNER_TEMP/requirements.txt"
+          python -m pip install -r "$RUNNER_TEMP/requirements.txt" "jsonschema==${JSONSCHEMA_VERSION}"
+          python -m pip install -e math-sdk
+      - name: Generate game shims
+        run: python tools/gen/gen_shim.py
+      - name: Core config = hand-written config
+        run: python tools/golden/compare_config.py seventh_veil
+      - name: Core books = hand-written books
+        working-directory: math-sdk
+        env:
+          PYTHONHASHSEED: "0"
+        run: python ../tools/golden/quick_books.py seventh_veil 20

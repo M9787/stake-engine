@@ -61,12 +61,19 @@ audio_in/
 /tools/e2e/playwright-report/
 /tools/e2e/shots/
 
-# Releases (docs/10 plan v3.3 M11): only the manifest and submission notes are tracked.
-/release/**
-!/release/*/
-!/release/*/*/
-!/release/*/*/manifest.json
-!/release/*/*/submission.md
+# Releases are per game; the repo holds the engine only.
+/release/
+
+# Games made with the factory stay local. Tracked exceptions: the golden reference and the smoke fixture.
+/skins/*
+!/skins/oracle-of-sevens/
+!/skins/zz-smoke/
+/tools/e2e/baselines/*
+!/tools/e2e/baselines/seventh_veil/
+!/tools/e2e/baselines/zz_smoke/
+
+# Editor tooling
+.serena/
 
 # Factory editor (M12)
 /factory/node_modules/

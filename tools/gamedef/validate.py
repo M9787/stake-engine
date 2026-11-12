@@ -349,6 +349,7 @@ def check_texts(game_path: Path, gdef: dict, err, warn):
     for key in needed:
         if key not in texts:
             err(f"text/en.json/{key}", "Missing text.")
+    check_rules_texts(gdef, texts, warn)
     vals = placeholders.values(gdef)
     words = restricted_words()
     for key, text in texts.items():
@@ -364,6 +365,36 @@ def check_texts(game_path: Path, gdef: dict, err, warn):
             hit = [w for w in words if re.search(rf"\b{re.escape(w)}\b", text, re.I)]
             if hit:
                 warn(f"text/en.json/{key}", f"Social casino play rewrites {hit} in this title.")
+
+
+def check_rules_texts(gdef: dict, texts: dict, warn):
+    """Every feature the game has is explained in the rules (Stake approval guidelines 26 and 29: win
+    mechanics and free spins must be explained). Keys are the ones GameInfo.svelte renders; tumbles,
+    the mode table and the max win are rendered by the core itself. Warnings, never errors: the owner
+    may word things differently (tools/gamedef/apply_preset.py drafts all of them)."""
+    has = lambda key: isinstance(texts.get(key), str) and texts[key].strip()  # noqa: E731
+    variants = gdef["features"]["bonusVariants"]
+    need = [("rules.scatter", "scatter symbol"), ("rules.minPay", "smallest win")]
+    if variants:
+        need.append(("rules.bonuses", "free spins (bonus)"))
+    if gdef["features"]["gridMultiplier"].get("enabled"):
+        need.append(("rules.charged", "multiplier grid"))
+    extra = [m for m in gdef["modes"] if m["kind"] == "buy" or m["cost"] > 1]
+    if extra:
+        need.append(("rules.modes", "extra modes " + ", ".join(m["name"] for m in extra)))
+    for key, feature in need:
+        if not has(key):
+            warn(f"text/en.json/{key}", f"Feature {feature} has no rules text (Stake guidelines 26/29: "
+                 "win mechanics and free spins must be explained).")
+    if has("rules.bonuses"):
+        body = texts["rules.bonuses"]
+        if gdef["freespinTriggers"].get("freegame") and "{retrigger." not in body:
+            warn("text/en.json/rules.bonuses", "Feature retrigger has no rules text: say how many scatters add "
+                 "how many spins ({retrigger.min}, {retrigger.spins}).")
+        for v in variants:
+            if len(variants) > 1 and f"{{variant.{v['id']}." not in body:
+                warn("text/en.json/rules.bonuses", f"Feature bonus variant {v['id']} has no rules text "
+                     f"(no {{variant.{v['id']}.*}} placeholder).")
 
 
 def main():

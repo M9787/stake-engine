@@ -1,0 +1,100 @@
+{
+  "_doc": "Stake approval checklist (plan Factory v3, D2). Evaluated by tools/release/checklist.py into build/<id>/reports/stake_checklist.json (StakeChecklist, factory/src/lib/types.ts). verify: auto = checked from files, e2e = Playwright result (build/<id>/reports/e2e.json, else the gate.json e2e step), manual = a person looks; 'look' says what to look at. 'evidence' is the check key in checklist.py. Numeric ids are guideline ids of the Stake AI-review prompt (texts are short paraphrases; full wording at the source URL).",
+  "schemaVersion": 1,
+  "sources": {
+    "prompt": "https://stake-engine.com/docs-content/prompt.md",
+    "math": "https://stake-engine.com/docs/approval-guidelines/math-verification",
+    "general": "https://stake-engine.com/docs/approval-guidelines",
+    "frontend": "https://stake-engine.com/docs/approval-guidelines/front-end-communication",
+    "jurisdiction": "https://stake-engine.com/docs/approval-guidelines/jurisdiction-requirements",
+    "tiles": "https://stake-engine.com/docs/approval-guidelines/game-tile-requirements",
+    "ranking": "https://studio.engine.io/docs/approval-guidelines/game-quality-rankings"
+  },
+  "checked": "2026-11-07",
+  "items": [
+    {"id": "181", "group": "frontend", "text": "Authenticates with the RGS on launch.", "source": "prompt", "verify": "e2e", "evidence": "e2e:m6c:.", "look": "Open the game from the Studio: it loads past the loading screen with a balance."},
+    {"id": "274", "group": "frontend", "text": "Fails correctly with an invalid rgs_url.", "source": "prompt", "verify": "e2e", "evidence": "e2e:m6c:^error ", "look": "Open with rgs_url=bad.host: a plain connection message, no raw JSON, no endless loader."},
+    {"id": "183", "group": "frontend", "text": "Pressing bet sends a successful play request.", "source": "prompt", "verify": "e2e", "evidence": "e2e:m6c:ERR_ACT is retried", "look": "Press Spin: /wallet/play returns 200 and the round plays."},
+    {"id": "275", "group": "frontend", "text": "No Stake Engine loader.", "source": "prompt", "verify": "auto", "evidence": "dist.loader", "look": "The loading screen is the game's own."},
+
+    {"id": "213", "group": "ip", "text": "Title is unique and avoids restricted terms (Megaways, XWays, Enhanced, Boosted, RTP, Gates of, Bonanza, Olympus, Rush, Kraken, Waylanders).", "source": "prompt", "verify": "auto", "evidence": "title.terms", "look": "Search the Stake lobby for the title: no existing game with the same name."},
+    {"id": "217", "group": "ip", "text": "No offensive or inappropriate content (no child-like art, mature theme).", "source": "prompt", "verify": "manual", "evidence": "manual", "look": "Look at every symbol, background and win screen: nothing offensive or child-like."},
+    {"id": "253", "group": "ip", "text": "Distinct from existing titles.", "source": "prompt", "verify": "manual", "evidence": "manual", "look": "Compare theme, art and mechanics with Stake's top slots and our own games: clearly different."},
+
+    {"id": "242", "group": "frontend", "text": "Uses every bet parameter from authenticate (bet levels, min, max, per-mode maxBet).", "source": "prompt", "verify": "e2e", "evidence": "e2e:m6c:maxBet", "look": "Step through bet levels: they match the Studio bet-level template."},
+    {"id": "187", "group": "frontend", "text": "An active round restores its bet amount.", "source": "prompt", "verify": "e2e", "evidence": "e2e:m6c:resume", "look": "Reload during a bonus: it resumes with the same bet."},
+
+    {"id": "219", "group": "frontend", "text": "Supports and displays currencies correctly.", "source": "prompt", "verify": "auto", "evidence": "currency", "look": "Open with currency=EUR, JPY, BTC: symbol, decimals and placement correct."},
+    {"id": "273", "group": "frontend", "text": "Sub-cent payouts display correctly.", "source": "prompt", "verify": "auto", "evidence": "currency", "look": "At the lowest bet a 0.2x win shows its sub-cent digits."},
+
+    {"id": "221", "group": "frontend", "text": "Zero-win rounds send no end-round request.", "source": "prompt", "verify": "manual", "evidence": "manual", "look": "Browser network tab: a losing spin sends /wallet/play only, no /wallet/end-round."},
+    {"id": "222", "group": "frontend", "text": "Insufficient balance sends no play request.", "source": "prompt", "verify": "manual", "evidence": "manual", "look": "Set a bet above the balance and press Spin: a message, no /wallet/play request (game/actor.ts guard)."},
+
+    {"id": "228", "group": "ui", "text": "Space bar places a bet.", "source": "prompt", "verify": "e2e", "evidence": "e2e:m6c:ERR_ACT is retried", "look": "Press Space on the main screen: a round starts."},
+    {"id": "227", "group": "ui", "text": "Main frame doesn't scroll.", "source": "prompt", "verify": "manual", "evidence": "manual", "look": "At 1024x576, 400x225, 800x450 and 425x812 the page has no scrollbar and cannot be scrolled (the e2e baselines compare the viewport only; they do not measure scrolling)."},
+    {"id": "104", "group": "ui", "text": "Autoplay needs a confirmation step.", "source": "prompt", "verify": "manual", "evidence": "manual", "look": "Open Auto spin: rounds start only after an explicit confirm."},
+    {"id": "31", "group": "ui", "text": "High-cost modes (bonus buys) need confirmation.", "source": "prompt", "verify": "e2e", "evidence": "e2e:replay:^replay \\w+ ", "look": "Buy a bonus: a confirm dialog with the price appears first."},
+    {"id": "107", "group": "ui", "text": "Sound can be turned off.", "source": "prompt", "verify": "manual", "evidence": "manual", "look": "Menu > Sound: all sound stops, and the setting sticks."},
+
+    {"id": "25", "group": "rules", "text": "RTP and max win are stated (game and every mode), matching the math.", "source": "prompt", "verify": "auto", "evidence": "rules.rtpMaxWin", "look": "Game rules screen: RTP and max win per mode."},
+    {"id": "24", "group": "rules", "text": "Every symbol's payout is shown.", "source": "prompt", "verify": "auto", "evidence": "rules.paytable", "look": "Pay table screen: every pay symbol with its pays."},
+    {"id": "26", "group": "rules", "text": "Win combinations are explained (clusters, scatter, multipliers, wild).", "source": "prompt", "verify": "auto", "evidence": "rules.features", "look": "Game rules screen: how a win forms and what each special symbol and multiplier does."},
+    {"id": "27", "group": "rules", "text": "Every mode has a description and cost.", "source": "prompt", "verify": "auto", "evidence": "rules.modes", "look": "Bonus menu and rules: every mode has a title, a description and its price."},
+    {"id": "29", "group": "rules", "text": "Free games and re-triggers are explained.", "source": "prompt", "verify": "auto", "evidence": "rules.freeSpins", "look": "Game rules screen: how free spins start, how many, and how re-triggers add spins."},
+    {"id": "235", "group": "rules", "text": "Every control is explained.", "source": "prompt", "verify": "auto", "evidence": "rules.buttons", "look": "Game rules > Buttons: every on-screen button is listed."},
+    {"id": "185", "group": "rules", "text": "General disclaimer is present.", "source": "prompt", "verify": "auto", "evidence": "rules.disclaimer", "look": "Game rules > General: the Engine disclaimer text."},
+    {"id": "266", "group": "rules", "text": "Mystery Mode chances are accurate.", "source": "prompt", "verify": "auto", "evidence": "rules.mystery", "look": "Only for games with a Mystery mode: stated chances equal the math."},
+
+    {"id": "193", "group": "ui", "text": "Works on laptop 1024x576.", "source": "prompt", "verify": "e2e", "evidence": "e2e:baseline:1024x576", "look": "Open at 1024x576: every control visible and usable, nothing overlaps the board."},
+    {"id": "195", "group": "ui", "text": "Works in popout S 400x225 and L 800x450.", "source": "prompt", "verify": "e2e", "evidence": "e2e:baseline:400x225,800x450", "look": "Open at 400x225 and 800x450: every control usable."},
+    {"id": "194", "group": "ui", "text": "Works on mobile 425x812.", "source": "prompt", "verify": "e2e", "evidence": "e2e:baseline:425x812", "look": "Open at 425x812: every control usable, the WIN label does not cover the board."},
+    {"id": "223", "group": "ui", "text": "Double-tap zoom is disabled on mobile.", "source": "prompt", "verify": "auto", "evidence": "dist.viewport", "look": "On a phone, double-tap the board: no zoom."},
+
+    {"id": "239", "group": "rules", "text": "English is supported (no raw keys, undefined or NaN in texts).", "source": "prompt", "verify": "auto", "evidence": "texts.en", "look": "Read every screen in English: no keys like mode.x.title, no 'undefined'."},
+    {"id": "240", "group": "frontend", "text": "Invalid languages don't break the display.", "source": "prompt", "verify": "e2e", "evidence": "e2e:m6c:forces English", "look": "Open with lang=xx and lang=en_US: English, no console errors."},
+
+    {"id": "77", "group": "social", "text": "Social mode: all text uses social wording.", "source": "prompt", "verify": "auto", "evidence": "social.texts", "look": "Open with social=true: read the rules, bonus menu and errors for bet, buy, pay, cash, stake."},
+    {"id": "78", "group": "social", "text": "Social mode: SC and GC currencies, no '$'.", "source": "prompt", "verify": "auto", "evidence": "currency", "look": "Open with social=true&currency=XSC: amounts end in SC, no $."},
+    {"id": "225", "group": "social", "text": "Social mode: mode names use social wording.", "source": "prompt", "verify": "auto", "evidence": "social.modes", "look": "Bonus menu with social=true: no 'buy' or 'bet' in mode names."},
+    {"id": "188", "group": "social", "text": "The replay has no restricted words.", "source": "prompt", "verify": "auto", "evidence": "social.texts", "look": "Open a replay with social=true: no restricted words."},
+
+    {"id": "171", "group": "replay", "text": "Replay URLs load and play the event.", "source": "prompt", "verify": "e2e", "evidence": "e2e:replay:^replay ", "look": "Open a reviewer event ID replay link: the round plays."},
+    {"id": "172", "group": "replay", "text": "Optional replay parameters (amount, currency, lang, social) are applied.", "source": "prompt", "verify": "manual", "evidence": "manual", "look": "Replay link with amount=2&currency=EUR&lang=en: the bet shows EUR 2.00."},
+    {"id": "173", "group": "replay", "text": "The replay can be watched again.", "source": "prompt", "verify": "manual", "evidence": "manual", "look": "After a replay ends, press REPLAY: it plays again."},
+    {"id": "174", "group": "replay", "text": "Bet cost and multiplier are shown in the replay.", "source": "prompt", "verify": "manual", "evidence": "manual", "look": "Replay of a bonus buy: the real cost (bet x mode price) and the win multiplier are shown."},
+    {"id": "243", "group": "replay", "text": "Replays work at popout S (400x225).", "source": "prompt", "verify": "manual", "evidence": "manual", "look": "Open a replay at 400x225: it plays and the replay controls fit."},
+
+    {"id": "math.cheapest", "group": "math", "text": "Critical: the cheapest mode costs 1.0x.", "source": "math", "verify": "auto", "evidence": "math.cheapest"},
+    {"id": "math.std", "group": "math", "text": "Critical: every 1.0x mode has a standard deviation of at least 0.6.", "source": "math", "verify": "auto", "evidence": "math.std"},
+    {"id": "math.rtp", "group": "math", "text": "Critical: every mode's RTP is between 96.0% and 96.7%.", "source": "math", "verify": "auto", "evidence": "math.rtp"},
+    {"id": "math.maxWin", "group": "math", "text": "Critical: max win at most 1,000,000x.", "source": "math", "verify": "auto", "evidence": "math.maxWin"},
+    {"id": "math.cost", "group": "math", "text": "Critical: every mode costs at most 50,000x.", "source": "math", "verify": "auto", "evidence": "math.cost"},
+    {"id": "math.books", "group": "math", "text": "Books payouts match the lookup tables.", "source": "math", "verify": "auto", "evidence": "math.books"},
+    {"id": "math.betLevels", "group": "math", "text": "Critical: the modes fit the chosen bet-level template.", "source": "math", "verify": "manual", "evidence": "manual", "look": "Studio > Math > Publish: the bet-level template check is green for every mode."},
+    {"id": "math.hitRate", "group": "math", "text": "Non-critical: hit rate 1 in 50 or better.", "source": "math", "verify": "auto", "evidence": "math.hitRate"},
+    {"id": "math.maxWinReachable", "group": "math", "text": "Non-critical: max win more often than 1 in 10,000,000.", "source": "math", "verify": "auto", "evidence": "math.maxWinReachable"},
+    {"id": "math.sims", "group": "math", "text": "Non-critical: 100,000 to 1,000,000 simulations per mode.", "source": "math", "verify": "auto", "evidence": "math.sims"},
+    {"id": "math.classes", "group": "math", "text": "Non-critical: no failed risk classes (volatility, CVaR, ETL, tail probability); each failed class lowers exposure and bet limits.", "source": "math", "verify": "auto", "evidence": "math.classes"},
+
+    {"id": "general.stateless", "group": "general", "text": "The game is stateless: every result comes from the RGS, nothing is decided in the browser.", "source": "general", "verify": "manual", "evidence": "manual", "look": "Architecture: results come only from books via /wallet/play (core/web, docs/03)."},
+    {"id": "general.original", "group": "general", "text": "Original game: own art, sound and design, no copied IP.", "source": "general", "verify": "manual", "evidence": "manual", "look": "Every asset has a licence or is our own work (Asset desk provenance)."},
+    {"id": "general.noStakeBranding", "group": "general", "text": "No Stake branding or logos in the game.", "source": "general", "verify": "auto", "evidence": "dist.loader", "look": "Look at the loading screen and menus: no Stake or Engine logo."},
+    {"id": "general.noSampleAssets", "group": "general", "text": "No web-sdk sample assets.", "source": "general", "verify": "auto", "evidence": "gate:no sample assets", "look": "Gate step 'no sample assets' passes."},
+    {"id": "general.noExternalHosts", "group": "general", "text": "No requests to hosts outside the bundle and rgs_url.", "source": "general", "verify": "auto", "evidence": "dist.external"},
+    {"id": "general.noVisualBugs", "group": "quality", "text": "No visual bugs (overlaps, cut-off text, flicker, missing images).", "source": "general", "verify": "manual", "evidence": "manual", "look": "Play 50 spins and one bonus per mode at each reviewer size."},
+    {"id": "general.balanceWin", "group": "quality", "text": "Balance and the final win are always shown.", "source": "frontend", "verify": "manual", "evidence": "manual", "look": "After every round the HUD shows the new balance and the round's total win."},
+    {"id": "general.winCountUp", "group": "quality", "text": "The win counts up to the final payout.", "source": "frontend", "verify": "manual", "evidence": "manual", "look": "A big win: the counter rises to the exact final amount."},
+    {"id": "general.fastplay", "group": "quality", "text": "In fast play (turbo) wins stay legible.", "source": "frontend", "verify": "manual", "evidence": "manual", "look": "Turn on turbo: every win amount is readable before the next round."},
+    {"id": "general.noConsoleErrors", "group": "quality", "text": "No console or network errors.", "source": "general", "verify": "e2e", "evidence": "e2e:replay:^replay ", "look": "Browser console during play and replay: no errors, no failed requests."},
+    {"id": "ui.reducedMotion", "group": "ui", "text": "prefers-reduced-motion starts in turbo (unless the jurisdiction disables turbo).", "source": "frontend", "verify": "e2e", "evidence": "e2e:m6c:reduced-motion"},
+
+    {"id": "tiles.sources", "group": "tiles", "text": "Tile sources exist: 3:4 background, 3:4 transparent foreground, 16:9 cover.", "source": "tiles", "verify": "auto", "evidence": "tiles.sources"},
+    {"id": "tiles.mediaEditor", "group": "tiles", "text": "Tile (3:4) and cover (16:9) made in the Studio Media Editor.", "source": "tiles", "verify": "manual", "evidence": "manual", "look": "Studio > Media: both crops saved."},
+    {"id": "tiles.bright", "group": "tiles", "text": "Tiles are bright and well lit.", "source": "tiles", "verify": "manual", "evidence": "manual", "look": "Tile next to the Stake lobby: it is not darker than its neighbours."},
+    {"id": "tiles.noDarkEdges", "group": "tiles", "text": "No dark edges or vignette on the tiles.", "source": "tiles", "verify": "manual", "evidence": "manual", "look": "The tile's borders are as bright as its centre."},
+    {"id": "tiles.noExtraText", "group": "tiles", "text": "No extra text on the tiles (only the title).", "source": "tiles", "verify": "manual", "evidence": "manual", "look": "No taglines, RTP, 'new' badges or provider text on the tile."},
+    {"id": "tiles.titleSafe", "group": "tiles", "text": "The title sits inside the safe area.", "source": "tiles", "verify": "manual", "evidence": "manual", "look": "Media Editor safe-area overlay: the title is fully inside it in both crops."},
+
+    {"id": "review.scoring", "group": "general", "text": "Review: 3 reviewers rate 0-3 stars each; the game needs at least 6 of 9 points to publish, else the review thread locks for 3 days. Only top-rated (3 of 3) games reach New Releases, Slots and Burst Games.", "source": "ranking", "verify": "manual", "evidence": "manual", "look": "Aim for 3 stars: original art, polish, every item above green."}
+  ]
+}

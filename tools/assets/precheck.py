@@ -1,6 +1,6 @@
 r"""Package precheck: refuse to package a game that is not submission-ready (docs/10 plan v3.3 M11, C3/C4, C-r3).
 
-Usage (from stake\, asset venv not needed):  math-sdk\env\Scripts\python.exe tools\assets\precheck.py --game <id> [--pre-art] [--json]
+Usage (from stake\, asset venv not needed):  math-sdk\env\Scripts\python.exe tools\assets\precheck.py --game <id> [--mode test|release] [--pre-art] [--json]
 Every problem carries a policy rule id and level from core\policy.v1.json (owner decision 2026-11-07):
   stake (FAIL, blocks packaging)
     assets.test      a slot in assets.lock.json has provenance licence 'test' (tools\assets\test_assets.py)
@@ -12,8 +12,11 @@ Every problem carries a policy rule id and level from core\policy.v1.json (owner
     assets.humanEdit image without a real human edit (edited file missing/identical, or no edit note)
     assets.provenance licence not on the allowlist or source URL missing
     assets.signoff   art sign-off missing or stale (tools\assets\contact_sheet.py --sign)
+Factory mode (game.json release.mode, tools\gamedef\mode.py; --mode overrides it): in test mode the rules whose
+core\policy.v1.json row has "modes": ["release"] (assets.test, assets.provenance, assets.humanEdit, assets.signoff,
+assets.complete) are off and not reported. Every Stake rule (sims, tiles exist - test tiles allowed - testOnly) applies.
 --pre-art: art-related Stake rules (assets.required) are reported as WARN but do not fail (Oracle before M6d).
---json prints {"ok", "blockers": [...], "warnings": [...]}; each item {rule, level, message, why}.
+--json prints {"ok", "game", "mode", "preArt", "blockers": [...], "warnings": [...]}; each item {rule, level, message, why}.
 Exit 1 only when there is a stake-level blocker.
 """
 
@@ -27,6 +30,7 @@ from catalog import ROOT, Catalog, asset_set_hash  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "gamedef"))
 from gamectx import game_arg  # noqa: E402
+from mode import mode_arg, rule_active  # noqa: E402
 
 MIN_ROWS = 100_000
 POLICY = ROOT / "core" / "policy.v1.json"
@@ -102,6 +106,7 @@ def math_problems(cat: Catalog):
 def main():
     cat = Catalog(game_arg())
     pre_art = "--pre-art" in sys.argv
+    mode = mode_arg(cat.game.gdef)
     rules = policy_rules()
     found = math_problems(cat)
     if cat.game.gdef["identity"].get("testOnly"):
@@ -110,6 +115,8 @@ def main():
     blockers, warnings = [], []
     for rule, msg in found:
         r = rules.get(rule, {})
+        if not rule_active(r, mode):
+            continue  # off in this factory mode (core\policy.v1.json "modes")
         level = r.get("level", "stake")
         item = {"rule": rule, "level": level, "message": msg, "why": r.get("why") or EXTRA_WHY.get(rule) or r.get("rule", "")}
         if level == "stake" and not (pre_art and rule in ART_RULES):
@@ -120,13 +127,13 @@ def main():
             warnings.append(item)
     failed = bool(blockers)
     if "--json" in sys.argv:
-        print(json.dumps({"ok": not failed, "game": cat.game.id, "preArt": pre_art, "blockers": blockers, "warnings": warnings}, indent=2))
+        print(json.dumps({"ok": not failed, "game": cat.game.id, "mode": mode, "preArt": pre_art, "blockers": blockers, "warnings": warnings}, indent=2))
     else:
         for tag, items in (("FAIL", blockers), ("WARN", warnings)):
             for i in items:
                 extra = f" ({i['note']})" if i.get("note") else ""
                 print(f"{tag}  [{i['rule']}] {i['message']}{extra}" + (f" - why: {i['why']}" if i["why"] else ""))
-        print(f"{'FAIL' if failed else 'OK'}: precheck {cat.game.id} ({len(blockers)} blocker(s) from Stake rules, "
+        print(f"{'FAIL' if failed else 'OK'}: precheck {cat.game.id} [{mode} mode] ({len(blockers)} blocker(s) from Stake rules, "
               f"{len(warnings)} warning(s){', art not enforced' if pre_art else ''})")
     sys.exit(1 if failed else 0)
 

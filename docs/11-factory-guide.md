@@ -85,6 +85,24 @@ Tab **Build & package**. Run the steps top to bottom. Each step shows a log; whe
 39. Three reviewers rate 0–3 stars; the game needs 6 of 9 points. A failed review locks the thread for 3 days ([05-publish.md](05-publish.md) Review).
 40. After approval nothing changes: the math is frozen. A fix is a new version: raise the version on **Overview**, then repeat parts D–F.
 
+## Test mode and Release mode (each game)
+
+Choose the mode on **Overview → Mode**. New games start in **Test**; Oracle is **Release**.
+
+- **Test**: you may use any assets — test assets, raw AI images, anything. The factory does **not** check licences, provenance, human edits or the art sign-off, and the documents contain **no licence log**. Everything Stake itself requires still applies: real math (100,000 spins per mode with the optimizer), the math critical tests, replay, social wording, rules texts, tiles. The package is a **real Stake upload** in `release\<game>\<version>-test\` (math, front, tiles, `UPLOAD.md`). You can upload it to Stake Studio, play it privately, and also submit it.
+- **Release**: everything in Test plus our quality rules (no test assets, a human edit and licence per image, art sign-off).
+
+**Upload a package to Stake Studio** (also in each package's `UPLOAD.md`):
+1. Studio → your game → **Files** → **Import files** → **Math**: select everything inside the package's `math` folder (`index.json`, the books and the lookup CSVs).
+2. **Import files** → **Front end**: select the whole `front` folder (use Chrome or Edge).
+3. **Publish new version** for math, then for the front end.
+4. **Play Game** in the sidebar: play every mode privately; use the **Social Mode** toggle in the play window to check social wording.
+5. Tiles: Media Editor, using `tiles\*.png`. Submit only when the Stake checklist (below) has no red item.
+
+## Stake approval checklist (preview)
+
+The **Submit** page → **Run checklist** evaluates every public Stake review item (guideline IDs from Stake's AI-review prompt, the math critical tests, general and tile rules: [core/stake_checklist.v1.json](../core/stake_checklist.v1.json)). Each item is **pass** (checked automatically, with evidence), **fail** (fix it), or **look** (a person must check it: the line says what to look at). The same table is in the submission documents. Stake recommends running its AI review prompt (https://stake-engine.com/docs-content/prompt.md) with a coding agent before you submit.
+
 ## What blocks vs what warns
 
 The rule list with levels is [core/policy.v1.json](../core/policy.v1.json) (owner decision 2026-11-07). The full checklist is [08-compliance.md](08-compliance.md).

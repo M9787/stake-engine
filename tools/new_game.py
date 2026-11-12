@@ -4,6 +4,9 @@ Usage:  math-sdk\env\Scripts\python.exe tools\new_game.py --from <template skin 
 Copies game.json, text\, math\reels\ and the assets.json style bible (slot fills are not copied: the new
 game starts on fallbacks), sets a new identity (version 0.1.0, testOnly off, art sign-off cleared),
 drops any frozen weights and initial board, then runs validate.py. Never overwrites an existing skin.
+New games start in factory test mode ("release": {"mode": "test"}, tools/gamedef/mode.py). Provider name and
+number come from factory/settings.json ({"providerName", "providerNumber", "teamName"}, set on the editor home
+page) when it exists and is valid; otherwise the template's values are kept. teamName is not stored in game.json.
 """
 
 import json
@@ -15,6 +18,22 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 GAME_ID = re.compile(r"^[a-z][a-z0-9_]{2,31}$")
+PROVIDER = re.compile(r"^[a-z0-9_]+$")  # schema identity.providerName
+SETTINGS = ROOT / "factory" / "settings.json"
+
+
+def provider_settings() -> dict:
+    """identity fields from factory/settings.json; invalid or missing values are left out."""
+    try:
+        s = json.loads(SETTINGS.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    out = {}
+    if isinstance(s, dict) and isinstance(s.get("providerName"), str) and PROVIDER.match(s["providerName"]):
+        out["providerName"] = s["providerName"]
+    if isinstance(s, dict) and type(s.get("providerNumber")) is int and s["providerNumber"] >= 0:
+        out["providerNumber"] = s["providerNumber"]
+    return out
 
 
 def fail(msg, as_json):
@@ -49,7 +68,9 @@ def main():
 
     g = json.loads((src / "game.json").read_text(encoding="utf-8"))
     g["identity"].update({"gameId": gid, "displayName": name.strip(), "workingName": name.strip(), "version": "0.1.0"})
+    g["identity"].update(provider_settings())
     g["identity"].pop("testOnly", None)
+    g["release"] = {"mode": "test"}  # Factory v3: new games start in test mode; switch on the Overview page
     g.get("presentation", {}).pop("initialBoard", None)
     g["review"] = {"signatureMoment": "Describe the one moment players will remember (min 10 characters).",
                    "originality": ["mechanic difference 1", "mechanic difference 2"], "artSignoff": None}

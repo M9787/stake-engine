@@ -14,6 +14,9 @@ math) and build\<id>\reports\event_ids.json (tools\release\pick_event_ids.py, on
 Sections: 1 Studio form fields, 2 modes table + critical tests, 3 rules and paytable, 4 reviewer event IDs,
 5 compliance checklist (core\policy.v1.json: level "stake" blocks, "ours" warns), 6 licences and art
 sign-off, 7 screenshots, 8 files to upload (sizes, sha256).
+Factory mode (game.json release.mode, tools\gamedef\mode.py): in test mode the rules core\policy.v1.json marks
+"modes": ["release"] (assets.test/provenance/humanEdit/signoff/complete) are not evaluated, section 6 (licences)
+is left out and the sections are renumbered; the header says "Mode: TEST" (owner documents only, never the game).
 
 pack.py never writes release\. tools\package.ps1 runs it without --dry-run and copies build\<id>\pack\*
 into release\<id>\<ver>\.
@@ -34,6 +37,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools" / "gamedef"))
 from gamectx import Game, game_arg  # noqa: E402
+from mode import release_mode, rule_active  # noqa: E402
 
 PY = sys.executable
 # Restricted title terms (stake-engine.com/docs-content/prompt.md [213], checked 2026-11-07; core/policy.v1.json title.terms).
@@ -72,9 +76,14 @@ def human(n: int) -> str:
 
 
 class Policy:
-    def __init__(self):
+    def __init__(self, mode: str = "release"):
         doc = read_json(ROOT / "core" / "policy.v1.json", {"rules": []})
         self.rules = {r["id"]: r for r in doc["rules"]}
+        self.mode = mode
+
+    def active(self, rule: str) -> bool:
+        """False for a rule that is off in this factory mode (policy "modes"); unknown rule ids always apply."""
+        return rule_active(self.rules.get(rule), self.mode)
 
     def issue(self, rule: str, message: str, level: str | None = None, why: str | None = None) -> dict:
         r = self.rules.get(rule, {})
@@ -158,6 +167,8 @@ def evaluate(g, pol, stats, ev, pre, gate, lock, signoff, tiles_dir):
     OVERLAP = {"sims.min", "assets.required", "assets.signoff", "assets.test", "skin.testOnly"}
 
     def add(issue, own=True):
+        if not pol.active(issue["rule"]):
+            return  # off in this factory mode
         if own and issue["rule"] in OVERLAP and issue["rule"] in pre_rules:
             return
         (blockers if issue["level"] == "stake" else warnings).append(issue)
@@ -284,7 +295,7 @@ def evaluate(g, pol, stats, ev, pre, gate, lock, signoff, tiles_dir):
         if not ev.get("version"):
             add(pol.issue("events.version", "Replay links have no Studio math version: re-pick with the version number after Publish Game > Math.",
                           level="ours", why="A replay link needs the published math version."))
-    return group(blockers), group(warnings), auto
+    return group(blockers), group(warnings), [a for a in auto if pol.active(a[0])]
 
 
 def group(rows):
@@ -402,14 +413,15 @@ def build_doc(g, pol, stats, ev, rules, gate, lock, signoff, shots, uploads, blo
                     (False, "Both confirmations ticked; distribution chosen (fixed at launch)."),
                     (False, "Game is not substantially similar to an earlier game, including ours (Game Licence Terms 7.1(a)(viii)).")]),
     ]))
-    # 6 provenance
+    # 6 provenance (release mode only: test mode has no licence output)
     prov_rows = []
     for sid, rec in sorted(lock.items()):
         p = rec.get("provenance") or {}
         edited = bool(rec.get("editedSha")) and rec.get("editedSha") != rec.get("rawSha")
         prov_rows.append([sid, ("TEST " if is_test(rec) else "") + str(p.get("licence") or "-"), p.get("sourceUrl") or "-", "yes" if edited else "no", p.get("editNote") or "-"])
     so = (f"Art signed off by {signoff.get('signedBy')} on {signoff.get('date')} (asset set {str(signoff.get('assetSetSha256', ''))[:12]})." if signoff else "Art NOT signed off.")
-    S.append(("6. Licences and provenance", [("p", so), ("table", ["Slot", "Licence", "Source", "Human edit", "Edit note"], prov_rows) if prov_rows else ("p", "No assets ingested yet (assets.lock.json missing).")]))
+    if pol.mode != "test":
+        S.append(("6. Licences and provenance", [("p", so), ("table", ["Slot", "Licence", "Source", "Human edit", "Edit note"], prov_rows) if prov_rows else ("p", "No assets ingested yet (assets.lock.json missing).")]))
     # 7 shots
     S.append(("7. Screenshots (reviewer sizes)", [("img", s.name, s) for s in shots] or [("p", "None yet: press 'Screenshots' on the Submit page.")]))
     # 8 uploads
@@ -421,12 +433,22 @@ def build_doc(g, pol, stats, ev, rules, gate, lock, signoff, shots, uploads, blo
         ("table", ["File", "Size", "sha256"], [[f["file"], human(f["bytes"]), f["sha256"][:16] + "..."] for f in uploads["front"]["files"]]),
         ("p", f"Tile sources for the Media Editor: {rel(g.skin / 'tiles')} ({', '.join(TILE_SLOTS)})."),
     ]))
+    # sections are numbered by position (test mode leaves section 6 out)
+    S = [(re.sub(r"^\d+\. ", f"{n}. ", title), blocks) for n, (title, blocks) in enumerate(S, 1)]
     return fields, S
+
+
+def mode_line(g) -> str:
+    m = release_mode(g.gdef)
+    return ("Mode: TEST (factory test mode: any assets allowed, no licence checks; every Stake rule still applies. "
+            "Shown in these owner documents only, never in the game.)" if m == "test" else "")
 
 
 def render_md(g, S, generated):
     out = [f"# Submission pack: {g.gdef['identity']['displayName']} {g.gdef['identity']['version']}", "",
            f"Game id `{g.id}`. Generated by tools/release/pack.py on {generated}. Do not edit; rerun pack.py.", ""]
+    if mode_line(g):
+        out += [f"**{mode_line(g)}**", ""]
     cell = lambda v: str(v).replace("|", "\\|").replace("\n", "<br>")
     for title, blocks in S:
         out += [f"## {title}", ""]
@@ -460,6 +482,7 @@ def render_html(g, S, generated, ready):
     out = [f"<!DOCTYPE html><html lang=en><meta charset=utf-8><title>Submission pack: {e(ident['displayName'])} {e(ident['version'])}</title><style>{CSS}</style><body>",
            f"<h1>Submission pack: {e(ident['displayName'])} {e(ident['version'])}</h1>",
            f"<p>Game id <code>{e(g.id)}</code>. Generated {e(generated)} by tools/release/pack.py. Print this page or keep it open beside the Stake Studio form.</p>",
+           *([f"<p><strong>{e(mode_line(g))}</strong></p>"] if mode_line(g) else []),
            f"<p class='ready {'yes' if ready else 'no'}'>{'Ready: no Stake-level blockers.' if ready else 'Not ready: fix the BLOCKS rows in section 5 first.'}</p>"]
     for title, blocks in S:
         out.append(f"<h2>{e(title)}</h2>")
@@ -485,7 +508,8 @@ def render_html(g, S, generated, ready):
 def main():
     g = Game(game_arg())
     dry = "--dry-run" in sys.argv
-    pol = Policy()
+    mode = release_mode(g.gdef)
+    pol = Policy(mode)
     out = ROOT / "build" / g.id / "pack"
     reports = ROOT / "build" / g.id / "reports"
     stats = math_stats(g)
@@ -504,6 +528,9 @@ def main():
     }
     generated = datetime.now().isoformat(timespec="seconds")
     fields, S = build_doc(g, pol, stats, ev, rules, gate, lock, signoff, shots, uploads, blockers, warnings, auto)
+    import checklist_render  # Stake approval checklist (preview): tools\release\checklist_render.py
+    ck_title, ck_blocks, checklist = checklist_render.section(g)
+    S.append((ck_title, ck_blocks))
     ready = not blockers
 
     if out.exists():
@@ -522,6 +549,7 @@ def main():
     summary = {
         "game": g.id,
         "version": g.gdef["identity"]["version"],
+        "mode": mode,
         "generated": generated,
         "ready": ready,
         "blockers": blockers,
@@ -530,13 +558,14 @@ def main():
         "files": files,
         "dryRun": dry,
         "uploads": uploads,
+        "checklist": checklist,
     }
     (out / "pack.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8", newline="\n")
     for b in blockers:
         print(f"  BLOCK {b['rule']}: {b['message']}")
     for w in warnings:
         print(f"  warn  {w['rule']}: {w['message']}")
-    print(f"{'OK' if ready else 'NOT READY'}: pack {g.id} -> {rel(out)} ({len(blockers)} blocker(s), {len(warnings)} warning(s){', dry run' if dry else ''})")
+    print(f"{'OK' if ready else 'NOT READY'}: pack {g.id} [{mode} mode] -> {rel(out)} ({len(blockers)} blocker(s), {len(warnings)} warning(s){', dry run' if dry else ''})")
     sys.exit(0 if dry or ready else 1)
 
 

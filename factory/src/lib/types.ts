@@ -10,6 +10,7 @@ export type GameSummary = {
 	board: { reels: number; rows: number };
 	modes: { name: string; kind: 'spin' | 'buy'; cost: number }[];
 	testOnly: boolean;
+	mode: ReleaseMode; // game.json release.mode; missing = 'release'
 	frozenModes: boolean; // true for Oracle (PROJECT.md section 4): modes and math are read-only in the editor
 	hasMath: boolean; // math-sdk/games/<id>/library/publish_files exists
 	requiredSlots: { filled: number; total: number }; // from assets.lock.json + catalogue
@@ -30,8 +31,13 @@ export type Definition = {
 	identity: { displayName: string; version: string };
 	theme: Record<string, unknown>;
 	texts: Record<string, string>;
+	/** game.json release.mode (missing = 'release'). Saving 'release' on a game without the block writes nothing. */
+	release: { mode: ReleaseMode };
 	readOnly: { modes: boolean; math: boolean }; // frozen for Oracle
 };
+
+/** GET/PUT /api/settings -> factory/settings.json: provider fields used by tools/new_game.py for new games. */
+export type StudioSettings = { providerName: string; providerNumber: number; teamName: string };
 
 // ---- jobs ---------------------------------------------------------------------------------------
 /** Whitelisted tool ids (src/lib/server/tools.ts). */
@@ -59,7 +65,8 @@ export type ToolId =
 	| 'math_freeze'
 	| 'event_ids'
 	| 'shots'
-	| 'pack';
+	| 'pack'
+	| 'checklist';
 
 export type JobStatus = 'running' | 'done' | 'failed' | 'cancelled';
 export type Job = {
@@ -111,6 +118,9 @@ export type PackSummary = {
 	warnings: PolicyIssue[];
 	studioFields: { label: string; value: string }[]; // copy into the Studio submission form
 	files: { label: string; path: string }[]; // submission.html, submission.md, screenshots, reports
+	mode?: ReleaseMode; // pack.py: factory mode the pack was made in (test: no licence section)
+	/** tools/release/checklist_render.py: StakeChecklist summary + one line per failed item. */
+	checklist?: { generated: string; mode: ReleaseMode; pass: number; fail: number; manual: number; unknown: number; autoFail: number; total: number; failed: string[] } | null;
 };
 export type JobLog = { job: Job; log: string; next: number };
 
@@ -153,3 +163,18 @@ export type AssetDesk = {
  *  PUT  /api/game/[id]/assets/provenance {slot, licence?, sourceUrl?, editNote?, redo?} -> SlotCard
  *  GET  /api/game/[id]/assets/file?slot=&lane=raw|edited|final -> image bytes (thumbnails)
  *  GET  /api/game/[id]/assets/contact/[name] -> build/<id>/contact_<name>.png */
+
+// ---- factory mode + Stake checklist (factory v3, 2026-11-07) ---------------------------------
+/** game.json release.mode: test = any assets, no licence output, still a real Stake upload. */
+export type ReleaseMode = 'test' | 'release';
+/** One item of core/stake_checklist.v1.json evaluated by tools/release/checklist.py. */
+export type ChecklistItem = {
+	id: string; // Stake guideline id (e.g. "223") or our key (e.g. "math.rtp")
+	group: string; // math | frontend | replay | social | rules | ui | quality | ip | tiles | general
+	text: string;
+	verify: 'auto' | 'e2e' | 'manual';
+	status: 'pass' | 'fail' | 'manual' | 'unknown';
+	evidence: string; // what was checked, or what to look at for manual items
+	source?: string;
+};
+export type StakeChecklist = { game: string; generated: string; mode: ReleaseMode; items: ChecklistItem[]; summary: Record<string, number> };

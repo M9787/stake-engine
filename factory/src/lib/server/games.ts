@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
 
-import type { Definition, GameSummary, ValidateResult } from '$lib/types';
+import type { Definition, GameSummary, ReleaseMode, ValidateResult } from '$lib/types';
 import { FROZEN_GAMES, PY, ROOT, buildDir, libraryDir, listSkins, readJson, type SkinRef } from './repo';
 import { snapshot } from './history';
 
@@ -96,6 +96,16 @@ const rewrite = (text: string, next: unknown) => {
 	return edits.length ? editJson(text, edits) : text;
 };
 
+/** game.json release.mode; missing or unknown = 'release' (same rule as tools/gamedef/mode.py). */
+export const releaseMode = (gdef: any): ReleaseMode => (gdef?.release?.mode === 'test' ? 'test' : 'release');
+
+/** Append a new top-level key at the end of the root object of `text` (other bytes unchanged). */
+const appendKey = (text: string, key: string, value: unknown): string => {
+	const end = text.lastIndexOf('}');
+	const body = `  ${JSON.stringify(key)}: ${JSON.stringify(value, null, 2).replace(/\n/g, '\n  ')}`;
+	return text.slice(0, end).replace(/\s*$/, '') + ',\n' + body + '\n' + text.slice(end);
+};
+
 // ---- summaries ------------------------------------------------------------------------------------
 const requiredIds = (s: SkinRef): string[] => {
 	const prompts = path.join(buildDir(s.id), 'prompts.json');
@@ -135,6 +145,7 @@ const summary = (s: SkinRef): GameSummary => {
 		board: { reels: s.gdef.board.reels, rows: s.gdef.board.rows },
 		modes: s.gdef.modes.map((m: any) => ({ name: m.name, kind: m.kind, cost: m.cost })),
 		testOnly: Boolean(s.gdef.identity.testOnly),
+		mode: releaseMode(s.gdef),
 		frozenModes: FROZEN_GAMES.has(s.id),
 		hasMath: fs.existsSync(path.join(libraryDir(s.id), 'publish_files')),
 		requiredSlots: { filled: req.filter((id) => id in lock).length, total: req.length },
@@ -173,6 +184,7 @@ export const readDefinition = (s: SkinRef): Definition => {
 		identity: { displayName: g.identity.displayName, version: g.identity.version },
 		theme: g.theme ?? {},
 		texts,
+		release: { mode: releaseMode(g) },
 		readOnly: { modes: frozen, math: frozen },
 	};
 };
@@ -180,12 +192,17 @@ export const readDefinition = (s: SkinRef): Definition => {
 const isPlainObject = isObj;
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-/** Check an incoming Definition; returns a plain error message or null. Only displayName, version, theme and
- *  the values of existing text keys may change; readOnly is server-owned and must not change. */
+/** Check an incoming Definition; returns a plain error message or null. Only displayName, version, theme,
+ *  release.mode and the values of existing text keys may change; readOnly is server-owned and must not change.
+ *  release may be left out (keeps the current mode). */
 export const checkDefinition = (s: SkinRef, d: any): string | null => {
 	if (!isPlainObject(d)) return 'body must be a Definition object';
-	const extra = Object.keys(d).filter((k) => !['identity', 'theme', 'texts', 'readOnly'].includes(k));
-	if (extra.length) return `only identity, theme and texts can be edited (got: ${extra.join(', ')})`;
+	const extra = Object.keys(d).filter((k) => !['identity', 'theme', 'texts', 'release', 'readOnly'].includes(k));
+	if (extra.length) return `only identity, theme, texts and release can be edited (got: ${extra.join(', ')})`;
+	if (d.release !== undefined) {
+		if (!isPlainObject(d.release) || Object.keys(d.release).some((k) => k !== 'mode')) return 'release must be {mode}';
+		if (d.release.mode !== 'test' && d.release.mode !== 'release') return "release.mode: 'test' or 'release'";
+	}
 	if (!isPlainObject(d.identity)) return 'identity must be an object';
 	const idExtra = Object.keys(d.identity).filter((k) => !['displayName', 'version'].includes(k));
 	if (idExtra.length) return `only identity.displayName and identity.version can be edited (got: ${idExtra.join(', ')})`;
@@ -213,7 +230,13 @@ export const writeDefinition = async (s: SkinRef, d: Definition): Promise<{ vali
 	g.identity.displayName = d.identity.displayName.trim();
 	g.identity.version = d.identity.version;
 	g.theme = d.theme;
-	const newG = rewrite(gText, g);
+	// release.mode: targeted write. Nothing is written when the mode is unchanged (a game without the block stays
+	// without it, e.g. Oracle = release); a missing block is appended at the end of game.json.
+	const wantMode = d.release?.mode ?? releaseMode(g);
+	const addRelease = wantMode !== releaseMode(g) && !isPlainObject(g.release);
+	if (wantMode !== releaseMode(g) && !addRelease) g.release = { ...g.release, mode: wantMode };
+	let newG = rewrite(gText, g);
+	if (addRelease) newG = appendKey(newG, 'release', { mode: wantMode });
 	const tText = fs.existsSync(textPath(s)) ? fs.readFileSync(textPath(s), 'utf-8') : null;
 	const newT = tText === null ? null : rewrite(tText, { ...JSON.parse(tText), ...d.texts });
 	const changed = newG !== gText || (newT !== null && newT !== tText);

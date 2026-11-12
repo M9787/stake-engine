@@ -201,6 +201,35 @@
 		</section>
 
 		<section class="panel">
+			<h2>Mode</h2>
+			<fieldset class="modes" aria-describedby="mode-help">
+				<legend class="sr">Factory mode</legend>
+				<label class="mode" class:on={def.release.mode === 'test'}>
+					<input type="radio" name="release-mode" value="test" bind:group={def.release.mode} />
+					<span>
+						<strong>Test</strong>
+						<span class="muted small block">
+							Any art and sound is allowed: unedited AI images, test placeholders, anything. No licence, source, human-edit or
+							sign-off checks, and no licence list in the package. All Stake rules still apply (100,000 simulations, math tests,
+							front-end rules, tile and cover images, wording). The package is a real Studio upload and can be submitted for review.
+						</span>
+					</span>
+				</label>
+				<label class="mode" class:on={def.release.mode === 'release'}>
+					<input type="radio" name="release-mode" value="release" bind:group={def.release.mode} />
+					<span>
+						<strong>Release</strong>
+						<span class="muted small block">
+							All rules: every art slot filled, no test assets, each image edited by a person, licence and source for every file,
+							art signed off. Packaging refuses while test assets are in the game.
+						</span>
+					</span>
+				</label>
+			</fieldset>
+			<p id="mode-help" class="muted small">Press Save to apply. Run the full check again after switching: packaging needs a check run in this mode.</p>
+		</section>
+
+		<section class="panel">
 			<h2>Colours</h2>
 			{#if palette}
 				<h3>Palette</h3>
@@ -318,6 +347,12 @@
 	textarea { width: 100%; resize: vertical; }
 	.chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
 	.chip { display: inline-block; font-size: 11px; padding: 0 6px; border-radius: 4px; background: #2a2450; border: 1px solid #4b4390; color: #cfc6ff; }
+	.modes { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+	.mode { display: grid; grid-template-columns: 22px 1fr; gap: 6px; align-items: start; padding: 8px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+	.mode.on { border-color: var(--accent); }
+	.mode input { margin-top: 3px; }
+	.block { display: block; }
+	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 	.history { list-style: none; padding: 0; margin: 0; }
 	.history li { display: flex; gap: 12px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--line); }
 	.history li button { margin-left: auto; }

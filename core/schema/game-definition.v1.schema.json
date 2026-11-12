@@ -221,6 +221,13 @@
         }
       }
     },
+    "release": {
+      "type": "object", "additionalProperties": false,
+      "description": "Factory mode of this game (owner decision 2026-11-07). test = any assets, no licence/provenance output, still a real Stake upload; release = all our quality rules. Missing = release.",
+      "properties": {
+        "mode": { "enum": ["test", "release"] }
+      }
+    },
     "listing": {
       "type": "object", "additionalProperties": false,
       "description": "What the Stake Studio submission form asks for (tools/release/pack.py). Text only, never changes the math.",

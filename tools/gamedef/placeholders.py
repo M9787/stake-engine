@@ -5,7 +5,8 @@ changed game.json can never leave a stale number in the rules (docs/10 section 2
 need the published math (rtpText: RTP and max win per mode) are filled by tools/gen (M9);
 here they resolve from game.json targets.
 
-Grammar: {mode.<name>.<field>} {variant.<id>.<field>} {paytable.minPay} {paytable.minCluster}
+Grammar: {mode.<name>.<field>} {variant.<id>.<field>} (spinsMin, spinsMax, spinsList, prechargeSpots,
+         prechargeValue, scatterMin, scatterMax) {paytable.minPay} {paytable.minCluster}
          {grid.cap} {grid.steps} {board.size} {retrigger.<field>}
 """
 
@@ -18,6 +19,27 @@ def _fmt(value):
     if isinstance(value, float) and value.is_integer():
         value = int(value)
     return f"{value:,}" if isinstance(value, int) and value >= 10000 else str(value)
+
+
+def spins_list(triggers: dict, lo: int, hi: int) -> str:
+    """Free spins per scatter count inside lo..hi, equal neighbours grouped: "3 give 12, 4-5 give 15,
+    6 or more give 18". The last group says "or more" when it reaches the highest trigger count."""
+    counts = sorted(c for c in triggers if lo <= c <= hi)
+    groups = []
+    for c in counts:
+        if groups and groups[-1][2] == triggers[c] and groups[-1][1] == c - 1:
+            groups[-1][1] = c
+        else:
+            groups.append([c, c, triggers[c]])
+    top = max(triggers)
+    parts = []
+    for i, (a, b, spins) in enumerate(groups):
+        if i == len(groups) - 1 and b == top and b > a:
+            label = f"{a} or more"
+        else:
+            label = str(a) if a == b else f"{a}-{b}"
+        parts.append(f"{label} give {_fmt(spins)}")
+    return ", ".join(parts)
 
 
 def values(gdef: dict) -> dict:
@@ -40,6 +62,7 @@ def values(gdef: dict) -> dict:
         if spins:
             out[f"{p}.spinsMin"] = _fmt(min(spins))
             out[f"{p}.spinsMax"] = _fmt(max(spins))
+            out[f"{p}.spinsList"] = spins_list(base_triggers, v["scatterMin"], v["scatterMax"])
         out[f"{p}.prechargeSpots"] = _fmt(v["precharge"]["spots"])
         out[f"{p}.prechargeValue"] = _fmt(v["precharge"]["value"])
         out[f"{p}.scatterMin"] = _fmt(v["scatterMin"])

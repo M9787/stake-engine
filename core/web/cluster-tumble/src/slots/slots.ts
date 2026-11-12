@@ -28,7 +28,8 @@ export const isFilled = (id: string) => Boolean(slots[id]?.file);
 export const slotAssets = Object.fromEntries(
 	Object.entries(slots)
 		.filter(([, s]) => s.kind === 'image' && s.file)
-		.map(([id, s]) => [slotKey(id), { type: 'sprite' as const, src: staticUrl(s.file as string) }]),
+		// Backgrounds and the logo show on the loading screen: load them first.
+		.map(([id, s]) => [slotKey(id), { type: 'sprite' as const, src: staticUrl(s.file as string), preload: id.startsWith('bg.') || id.startsWith('logo.') }]),
 );
 
 /** Font slots that the skin filled: family name -> URL (registered with FontFace at startup). */

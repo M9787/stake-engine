@@ -1,5 +1,5 @@
 {
-  "_comment": "Which rules block a game and which only warn (owner decision 2026-11-07: Stake rules block, our own rules warn). Read by tools/gamedef/validate.py, tools/assets/precheck.py, tools/gates/*. Sources checked 2026-11-07; see docs/08-compliance.md Sources.",
+  "_comment": "Which rules block a game and which only warn (owner decision 2026-11-07: Stake rules block, our own rules warn). Read by tools/gamedef/validate.py, tools/assets/precheck.py, tools/gates/*. Sources checked 2026-11-07; see docs/08-compliance.md Sources. Each rule's \"modes\" lists the factory modes it applies in (game.json release.mode, tools/gamedef/mode.py; missing release = \"release\"): test-mode games skip the release-only art rules.",
   "schemaVersion": 1,
   "levels": {
     "stake": "Stake Engine requirement: blocks packaging (the Studio form or the review would reject it).",
@@ -9,134 +9,160 @@
     {
       "id": "rtp.band",
       "level": "stake",
+      "modes": ["test", "release"],
       "rule": "Every mode's RTP between 96.0% and 96.7%",
       "source": "https://stake-engine.com/docs/approval-guidelines/math-verification"
     },
     {
       "id": "rtp.ourBand",
       "level": "ours",
+      "modes": ["test", "release"],
       "rule": "RTP between 96.15% and 96.55% (margin inside the Stake band)",
       "why": "Engine computes RTP itself; a margin avoids a measured 96.70% failing."
     },
     {
       "id": "wincap.hard",
       "level": "stake",
+      "modes": ["test", "release"],
       "rule": "Max win at most 1,000,000x",
       "source": "https://stake-engine.com/docs/approval-guidelines/math-verification"
     },
     {
       "id": "wincap.soft",
       "level": "ours",
+      "modes": ["test", "release"],
       "rule": "Max win at most 100,000x",
       "why": "Above it Stake's non-critical test lowers exposure and bet limits."
     },
     {
       "id": "wincap.reachable",
       "level": "stake",
+      "modes": ["test", "release"],
       "rule": "Max win realistically obtainable (more often than 1 in 10,000,000)",
       "source": "https://stake-engine.com/docs/approval-guidelines/math-verification"
     },
     {
       "id": "cost.cheapest",
       "level": "stake",
+      "modes": ["test", "release"],
       "rule": "Cheapest mode costs 1.0x with std dev at least 0.6",
       "source": "https://stake-engine.com/docs/approval-guidelines/math-verification"
     },
     {
       "id": "cost.max",
       "level": "stake",
+      "modes": ["test", "release"],
       "rule": "Mode cost at most 50,000x",
       "source": "https://stake-engine.com/docs/approval-guidelines/math-verification"
     },
     {
       "id": "modes.count",
       "level": "stake",
+      "modes": ["test", "release"],
       "rule": "At most 20 modes",
       "source": "https://stake-engine.com/docs/approval-guidelines/math-verification"
     },
     {
       "id": "sims.min",
       "level": "stake",
+      "modes": ["test", "release"],
       "rule": "100,000 to 1,000,000 simulations per mode",
       "source": "https://stake-engine.com/docs/approval-guidelines/math-verification"
     },
     {
       "id": "social.words",
       "level": "stake",
+      "modes": ["test", "release"],
       "rule": "No restricted social-casino words in player texts or mode names",
       "source": "https://stake-engine.com/docs/approval-guidelines/jurisdiction-requirements"
     },
     {
       "id": "title.terms",
       "level": "stake",
+      "modes": ["test", "release"],
       "rule": "Title avoids restricted terms (Megaways, XWays, Enhanced, Boosted, RTP, Gates of, Bonanza, Olympus, Rush, Kraken, Waylanders)",
       "source": "https://stake-engine.com/docs-content/prompt.md [213]"
     },
     {
       "id": "assets.unique",
       "level": "stake",
+      "modes": ["test", "release"],
       "rule": "No web-sdk sample assets; assets must be unique and not infringe IP",
       "source": "https://stake-engine.com/docs/approval-guidelines/front-end-communication"
     },
     {
       "id": "assets.test",
       "level": "stake",
+      "modes": ["release"],
       "rule": "No factory test assets (labelled placeholders) in a package",
       "why": "Test placeholders are not original game art."
     },
     {
       "id": "assets.required",
       "level": "stake",
+      "modes": ["test", "release"],
       "rule": "Tile (3:4) and cover (16:9) art exists",
       "source": "https://stake-engine.com/docs/approval-guidelines/game-tile-requirements"
     },
     {
       "id": "assets.complete",
       "level": "ours",
+      "modes": ["release"],
       "rule": "Every required art and sound slot is filled",
       "why": "Unfilled slots show drawn placeholder shapes: legal, but a low review rating."
     },
     {
       "id": "assets.humanEdit",
       "level": "ours",
+      "modes": ["release"],
       "rule": "Each image has a recorded human edit",
       "why": "Stake rates generic AI art low; a human edit also strengthens IP ownership."
     },
     {
       "id": "assets.provenance",
       "level": "ours",
+      "modes": ["release"],
       "rule": "Each file has a licence and source link",
       "why": "IP defence; Stake Terms require no third-party infringement."
     },
     {
       "id": "assets.signoff",
       "level": "ours",
+      "modes": ["release"],
       "rule": "Art signed off with the current asset-set hash",
       "why": "Owner review against the art-direction checklist."
     },
     {
       "id": "bundle.size",
       "level": "ours",
+      "modes": ["test", "release"],
       "rule": "Build at most 10 MB (textures 5, audio 2.5, JS 1.5)",
       "why": "Stake's top-rating criteria: optimised bundle size."
     },
     {
       "id": "originality",
       "level": "stake",
+      "modes": ["test", "release"],
       "rule": "Not substantially similar to an earlier game, including our own",
       "source": "Game Licence Terms 7.1(a)(viii), 2026-10-26"
     },
     {
       "id": "originality.formula",
       "level": "ours",
+      "modes": ["test", "release"],
       "rule": "At least 2 mechanic differences plus a signature moment",
       "why": "Our way to stay clearly original; the top rating needs exceptional creativity."
     },
     {
       "id": "skin.testOnly",
       "level": "stake",
+      "modes": ["test", "release"],
       "rule": "Test skins (identity.testOnly) are never packaged",
       "why": "Factory test games exist only to prove the pipeline."
     }
-  ]
+  ],
+  "modes": {
+    "test": "Any assets allowed (unedited AI, test placeholders); no licence, provenance, human-edit or sign-off checks and no licence output. Every Stake rule still applies; the package is a real Studio upload set.",
+    "release": "Every rule."
+  }
 }

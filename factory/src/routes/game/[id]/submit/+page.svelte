@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import type { PackSummary } from '$lib/types';
 	import JobPanel, { api } from '$lib/components/JobPanel.svelte';
+	import Checklist from '$lib/components/Checklist.svelte';
 
 	const id = $derived(page.params.id as string);
 
@@ -87,6 +88,8 @@
 	</div>
 </section>
 
+<section class="checklist"><Checklist game={id} /></section>
+
 <h2>Result</h2>
 {#if loading}
 	<p class="muted">Loading…</p>
@@ -158,6 +161,7 @@
 <style>
 	.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
 	.steps h2 { margin-top: 0; }
+	.checklist { margin-top: 12px; }
 	.small { font-size: 13px; }
 	.field { display: flex; gap: 8px; align-items: center; margin: 6px 0 10px; }
 	.status { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }

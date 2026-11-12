@@ -103,6 +103,7 @@ Object.assign(TOOLS, {
 	math_freeze: { label: 'Freeze math (keep these weights)', exe: PY, args: (g: string) => [path.join(ROOT, 'tools\\math\\freeze.py'), '--game', g], minutes: 0.2, refuseFrozen: true },
 	event_ids: { label: 'Pick reviewer event IDs', exe: PY, args: (g: string, o: JobOpts) => [path.join(ROOT, 'tools\\release\\pick_event_ids.py'), '--game', g, ...(o.version ? ['--version', o.version] : [])], minutes: 1 },
 	shots: { label: 'Screenshots at reviewer sizes', exe: 'cmd.exe', args: (g: string) => ['/c', 'pnpm', 'exec', 'playwright', 'test', 'shots'], cwd: path.join(ROOT, 'tools', 'e2e'), minutes: 2 },
+	checklist: { label: 'Stake approval checklist', exe: PY, args: (g: string) => [path.join(ROOT, 'tools\\release\\checklist.py'), '--game', g], minutes: 0.5 },
 	pack: { label: 'Build submission pack (documents)', exe: PY, args: (g: string) => [path.join(ROOT, 'tools\\release\\pack.py'), '--game', g, '--dry-run'], minutes: 1 },
 } satisfies Partial<Record<ToolId, ToolSpec>>);
 

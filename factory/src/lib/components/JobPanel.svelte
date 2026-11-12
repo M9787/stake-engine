@@ -27,6 +27,7 @@
 		event_ids: { label: 'Pick reviewer event IDs', minutes: 1 },
 		shots: { label: 'Screenshots', minutes: 2 },
 		pack: { label: 'Submission pack', minutes: 1 },
+		checklist: { label: 'Stake approval checklist', minutes: 0.5 },
 	};
 
 	/** Turn a failed response into one plain sentence. */

@@ -15,7 +15,7 @@
 <script lang="ts">
 	// One visual per asset slot (plan v3.3 section 1): the skin's image when the slot is filled, else the
 	// slot's procedural fallback. Motion presets (src/motion) wrap this component.
-	import { Container, Graphics, Sprite } from 'pixi-svelte';
+	import { Container, Graphics, Sprite, getContextApp } from 'pixi-svelte';
 
 	import { drawFallback } from './procedural';
 	import { isFilled, palette, slotKey, slots } from './slots';
@@ -23,9 +23,12 @@
 	const props: Props = $props();
 	const anchor = $derived(props.anchor ?? 0.5);
 	const entry = $derived(slots[props.id]);
+	// Draw the image only once its texture is loaded (Stake: no console errors); until then the fallback.
+	const app = getContextApp();
+	const ready = $derived(isFilled(props.id) && !!app.stateApp.loadedAssets?.[slotKey(props.id)]);
 </script>
 
-{#if isFilled(props.id)}
+{#if ready}
 	<Sprite
 		key={slotKey(props.id)}
 		x={props.x ?? 0}
